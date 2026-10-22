@@ -1,0 +1,49 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.env*
+!.env.example
+npm-debug.log*
+
+
+.admin-initial-password
+.reader-publish/
+
+# Local administrator data and test fixtures
+*.sqlite*
+*.db
+*.db-*
+*.py[cod]
+*.log
+*.pem
+*.pfx
+*.p8
+.cf-*
+id_rsa
+id_ed25519
+pwd.txt
+.tmp-admin-test/
+
+# Local Everything IPC inventory helpers/output
+prayersupdate-ipc-search.ps1
+prayersupdate-ipc-*.csv
+
+# Python and local tool caches
+__pycache__/
+.pytest_cache/
+
+
+# Source exports and mutable runtime data
+/WeChatImages/
+/data/
+/backups/
+/snapshots/
+
+# Generated contact sheets and local import inspection output
+/docs/import-audit/

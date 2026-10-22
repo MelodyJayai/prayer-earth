@@ -1,0 +1,4724 @@
+{
+  "source": "D:\\Fight\\prayersupdate\\WeChatImages\\WeChatImages",
+  "counts": {
+    "morning": 122,
+    "mission": 89,
+    "duplicate": 3,
+    "excluded": 1
+  },
+  "maxSegmentHeight": 4096,
+  "items": [
+    {
+      "id": "morning-20260608-001",
+      "date": "2026-06-08",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260608085738_1018_51.jpg",
+      "sha256": "b4de8867e2a0ea3a25a349b323ac560dbda5fb676e3dbcdd5a114f5bcf41f792",
+      "width": 888,
+      "height": 6404,
+      "segments": [
+        {
+          "fileName": "morning-20260608-001-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260608-001-02.jpg",
+          "width": 888,
+          "height": 2308
+        }
+      ]
+    },
+    {
+      "id": "morning-20260611-002",
+      "date": "2026-06-11",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260611090222_1029_51.jpg",
+      "sha256": "f59d0810183d4d42fe70144acb0fffb4b01f1f619316e0ad20a50723f8296960",
+      "width": 888,
+      "height": 5820,
+      "segments": [
+        {
+          "fileName": "morning-20260611-002-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260611-002-02.jpg",
+          "width": 888,
+          "height": 1724
+        }
+      ]
+    },
+    {
+      "id": "mission-20260612-001",
+      "date": "2026-06-12",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260612090636_1035_51.jpg",
+      "sha256": "0f7ceca12b40df5280dfacedbae93433dfc7f076ea2fb5c85faa391759a99e5f",
+      "width": 888,
+      "height": 11308,
+      "segments": [
+        {
+          "fileName": "mission-20260612-001-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260612-001-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260612-001-03.jpg",
+          "width": 888,
+          "height": 3116
+        }
+      ]
+    },
+    {
+      "id": "morning-20260612-003",
+      "date": "2026-06-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260612090621_1034_51.jpg",
+      "sha256": "418f975810ba5c485d85a5a15cd2a8096b2f2042abef12eae13e7ef9628db23f",
+      "width": 888,
+      "height": 5816,
+      "segments": [
+        {
+          "fileName": "morning-20260612-003-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260612-003-02.jpg",
+          "width": 888,
+          "height": 1720
+        }
+      ]
+    },
+    {
+      "id": "morning-20260612-004",
+      "date": "2026-06-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260612111321_1038_51.jpg",
+      "sha256": "a0acea66923ae367548165eb890c43056bea67da5430c801cf2756cb3fe8f207",
+      "width": 888,
+      "height": 7289,
+      "segments": [
+        {
+          "fileName": "morning-20260612-004-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260612-004-02.jpg",
+          "width": 888,
+          "height": 3193
+        }
+      ]
+    },
+    {
+      "id": "morning-20260614-005",
+      "date": "2026-06-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260614090644_1039_51.jpg",
+      "sha256": "403dc577727224446311ff303fe3251f2b02274a475d62a719a65ac24fefc039",
+      "width": 888,
+      "height": 6700,
+      "segments": [
+        {
+          "fileName": "morning-20260614-005-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260614-005-02.jpg",
+          "width": 888,
+          "height": 2604
+        }
+      ]
+    },
+    {
+      "id": "morning-20260615-006",
+      "date": "2026-06-15",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260615085943_1041_51.jpg",
+      "sha256": "4f3433b31e763e0d3e488851d3e7e25130387762b4120001b32b9afd9bc09f3c",
+      "width": 824,
+      "height": 2458,
+      "segments": [
+        {
+          "fileName": "morning-20260615-006-01.jpg",
+          "width": 824,
+          "height": 2458
+        }
+      ]
+    },
+    {
+      "id": "mission-20260616-002",
+      "date": "2026-06-16",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260616090221_1044_51.jpg",
+      "sha256": "fd5ff78bcede42962c4c3c15cb016c6cdfcf3b6395c10720339b4dab510dec71",
+      "width": 888,
+      "height": 10461,
+      "segments": [
+        {
+          "fileName": "mission-20260616-002-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260616-002-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260616-002-03.jpg",
+          "width": 888,
+          "height": 2269
+        }
+      ]
+    },
+    {
+      "id": "morning-20260616-007",
+      "date": "2026-06-16",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260616090202_1043_51.jpg",
+      "sha256": "37e9eb9056f9ac91e923e8f4c75c62d45a7fbbab2813ea9c534641fc9c22b968",
+      "width": 888,
+      "height": 6209,
+      "segments": [
+        {
+          "fileName": "morning-20260616-007-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260616-007-02.jpg",
+          "width": 888,
+          "height": 2113
+        }
+      ]
+    },
+    {
+      "id": "mission-20260617-003",
+      "date": "2026-06-17",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260617090656_1047_51.jpg",
+      "sha256": "022bf6040e729dc78cf296e72998f653a904af6851f75eb6d310994a18680978",
+      "width": 888,
+      "height": 12782,
+      "segments": [
+        {
+          "fileName": "mission-20260617-003-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260617-003-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260617-003-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260617-003-04.jpg",
+          "width": 888,
+          "height": 494
+        }
+      ]
+    },
+    {
+      "id": "morning-20260617-008",
+      "date": "2026-06-17",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260617090640_1046_51.jpg",
+      "sha256": "0aff341f76adf552b90766d884d232a61d79c06338a32b836d201c94f11ac2f7",
+      "width": 888,
+      "height": 8042,
+      "segments": [
+        {
+          "fileName": "morning-20260617-008-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260617-008-02.jpg",
+          "width": 888,
+          "height": 3946
+        }
+      ]
+    },
+    {
+      "id": "mission-20260618-004",
+      "date": "2026-06-18",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260618090117_1052_51.jpg",
+      "sha256": "49f6184ecad4946f6fee09a36f90bca3b88afa73770c32d787bbdaedb8c1838f",
+      "width": 888,
+      "height": 12237,
+      "segments": [
+        {
+          "fileName": "mission-20260618-004-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260618-004-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260618-004-03.jpg",
+          "width": 888,
+          "height": 4045
+        }
+      ]
+    },
+    {
+      "id": "morning-20260618-009",
+      "date": "2026-06-18",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260618090053_1051_51.jpg",
+      "sha256": "91dba01551e1f8787c1002c856594ee02dd5ef6deef236bb7d9d1e62f62be12d",
+      "width": 888,
+      "height": 7288,
+      "segments": [
+        {
+          "fileName": "morning-20260618-009-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260618-009-02.jpg",
+          "width": 888,
+          "height": 3192
+        }
+      ]
+    },
+    {
+      "id": "mission-20260619-005",
+      "date": "2026-06-19",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260619090512_1059_51.jpg",
+      "sha256": "54ae35c50616ce527fa06d8bc74c075ae1060769451aae5afb1b85e596493fdf",
+      "width": 888,
+      "height": 11264,
+      "segments": [
+        {
+          "fileName": "mission-20260619-005-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260619-005-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260619-005-03.jpg",
+          "width": 888,
+          "height": 3072
+        }
+      ]
+    },
+    {
+      "id": "morning-20260619-010",
+      "date": "2026-06-19",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260619090456_1058_51.jpg",
+      "sha256": "54951b64d66878b523ae173592602ebbdff73d99ecf46431805a7ecf470f0229",
+      "width": 888,
+      "height": 6697,
+      "segments": [
+        {
+          "fileName": "morning-20260619-010-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260619-010-02.jpg",
+          "width": 888,
+          "height": 2601
+        }
+      ]
+    },
+    {
+      "id": "mission-20260620-006",
+      "date": "2026-06-20",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260620085919_1065_51.jpg",
+      "sha256": "e8a66f30156fa19dd75801ee5551f56892f309ec2cffed64a0cc98803d286e05",
+      "width": 888,
+      "height": 12405,
+      "segments": [
+        {
+          "fileName": "mission-20260620-006-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260620-006-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260620-006-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260620-006-04.jpg",
+          "width": 888,
+          "height": 117
+        }
+      ]
+    },
+    {
+      "id": "morning-20260620-011",
+      "date": "2026-06-20",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260620085859_1064_51.jpg",
+      "sha256": "dccb5f8c1ceeef6f7da0a64ee7bdc9ab5303df2ec554e7d07bb1934eb4b5aade",
+      "width": 888,
+      "height": 7582,
+      "segments": [
+        {
+          "fileName": "morning-20260620-011-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260620-011-02.jpg",
+          "width": 888,
+          "height": 3486
+        }
+      ]
+    },
+    {
+      "id": "morning-20260621-012",
+      "date": "2026-06-21",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260621090420_1067_51.jpg",
+      "sha256": "6f4c1f65997bb18d9f7d3adc661d9b055a99ff3627c1b2d619ef57456d805ac8",
+      "width": 888,
+      "height": 6111,
+      "segments": [
+        {
+          "fileName": "morning-20260621-012-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260621-012-02.jpg",
+          "width": 888,
+          "height": 2015
+        }
+      ]
+    },
+    {
+      "id": "morning-20260622-013",
+      "date": "2026-06-22",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260622090026_1056_51.jpg",
+      "sha256": "c9ee735f4963231e1b96f8f524dc3391afca905134d51f26b54cd4f24471d14b",
+      "width": 1080,
+      "height": 4194,
+      "segments": [
+        {
+          "fileName": "morning-20260622-013-01.jpg",
+          "width": 1080,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260622-013-02.jpg",
+          "width": 1080,
+          "height": 98
+        }
+      ]
+    },
+    {
+      "id": "mission-20260623-007",
+      "date": "2026-06-23",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260623090712_1070_51.jpg",
+      "sha256": "450c4e0b74b9e36fef4ecf75676da8c1ea8ef84621478c436829a7bd32376831",
+      "width": 888,
+      "height": 13072,
+      "segments": [
+        {
+          "fileName": "mission-20260623-007-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260623-007-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260623-007-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260623-007-04.jpg",
+          "width": 888,
+          "height": 784
+        }
+      ]
+    },
+    {
+      "id": "morning-20260623-014",
+      "date": "2026-06-23",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260623090425_1069_51.jpg",
+      "sha256": "dff14d30027594b5681fb85fd7b16c6d36009598e9391dab39a6d9f5056155fe",
+      "width": 1044,
+      "height": 6234,
+      "segments": [
+        {
+          "fileName": "morning-20260623-014-01.jpg",
+          "width": 1044,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260623-014-02.jpg",
+          "width": 1044,
+          "height": 2138
+        }
+      ]
+    },
+    {
+      "id": "mission-20260624-008",
+      "date": "2026-06-24",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260624090027_1073_51.jpg",
+      "sha256": "700f9f7d02b7d3b3006024ab7bdf067c9ed57ac8e697f01b02036097c47e7f25",
+      "width": 888,
+      "height": 10494,
+      "segments": [
+        {
+          "fileName": "mission-20260624-008-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260624-008-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260624-008-03.jpg",
+          "width": 888,
+          "height": 2302
+        }
+      ]
+    },
+    {
+      "id": "morning-20260624-015",
+      "date": "2026-06-24",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260624085956_1072_51.jpg",
+      "sha256": "25f26262bcb5613d17a16911fc2592c6314e1280a193ac029a8434738a4eab02",
+      "width": 1080,
+      "height": 3990,
+      "segments": [
+        {
+          "fileName": "morning-20260624-015-01.jpg",
+          "width": 1080,
+          "height": 3990
+        }
+      ]
+    },
+    {
+      "id": "mission-20260625-009",
+      "date": "2026-06-25",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260625090018_1078_51.jpg",
+      "sha256": "746dbaca72c38f88cdb94e27ea372a37cd8a6b75693ca809ccd7c434d72173b7",
+      "width": 888,
+      "height": 11326,
+      "segments": [
+        {
+          "fileName": "mission-20260625-009-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260625-009-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260625-009-03.jpg",
+          "width": 888,
+          "height": 3134
+        }
+      ]
+    },
+    {
+      "id": "morning-20260625-016",
+      "date": "2026-06-25",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260625085954_1077_51.jpg",
+      "sha256": "161cc3a0ebd4a8c5350f1f40dcf1576706640bf4d9ebd5a32d1e52356c1b1b91",
+      "width": 1080,
+      "height": 3514,
+      "segments": [
+        {
+          "fileName": "morning-20260625-016-01.jpg",
+          "width": 1080,
+          "height": 3514
+        }
+      ]
+    },
+    {
+      "id": "mission-20260626-010",
+      "date": "2026-06-26",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260626085952_1081_51.jpg",
+      "sha256": "5f85b16e5c02c5c4ac4cff828c0d114207814e4de06864fd47e05e63b96d6a07",
+      "width": 888,
+      "height": 12047,
+      "segments": [
+        {
+          "fileName": "mission-20260626-010-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260626-010-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260626-010-03.jpg",
+          "width": 888,
+          "height": 3855
+        }
+      ]
+    },
+    {
+      "id": "morning-20260626-017",
+      "date": "2026-06-26",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260626085933_1080_51.jpg",
+      "sha256": "376d0bd7d5cb99b683d333900184f1e2bb209ff9d5720aea0a391c22c0894642",
+      "width": 1080,
+      "height": 3948,
+      "segments": [
+        {
+          "fileName": "morning-20260626-017-01.jpg",
+          "width": 1080,
+          "height": 3948
+        }
+      ]
+    },
+    {
+      "id": "mission-20260627-011",
+      "date": "2026-06-27",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260627090001_1086_51.jpg",
+      "sha256": "c4f0390dc4323bbcda1d1e51204c96444e89190f5285389f11e0d73c8fd26869",
+      "width": 888,
+      "height": 11228,
+      "segments": [
+        {
+          "fileName": "mission-20260627-011-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260627-011-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260627-011-03.jpg",
+          "width": 888,
+          "height": 3036
+        }
+      ]
+    },
+    {
+      "id": "morning-20260627-018",
+      "date": "2026-06-27",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260627085942_1085_51.jpg",
+      "sha256": "73af68ff50188164c0224b2a0351344394c0707cd27ecb2b15aa9d2f258e12ef",
+      "width": 1080,
+      "height": 3686,
+      "segments": [
+        {
+          "fileName": "morning-20260627-018-01.jpg",
+          "width": 1080,
+          "height": 3686
+        }
+      ]
+    },
+    {
+      "id": "morning-20260628-019",
+      "date": "2026-06-28",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260628090121_1092_51.jpg",
+      "sha256": "970408e841414f2bca20d6e7abb8c451f76e9772e9d55a975e429399b386f767",
+      "width": 996,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260628-019-01.jpg",
+          "width": 996,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260629-020",
+      "date": "2026-06-29",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260629090755_1090_51.jpg",
+      "sha256": "4d23e59f0569bd50af71a0a677669e30621004d9b3d335c320dfaf62cdf6ed85",
+      "width": 1080,
+      "height": 3786,
+      "segments": [
+        {
+          "fileName": "morning-20260629-020-01.jpg",
+          "width": 1080,
+          "height": 3786
+        }
+      ]
+    },
+    {
+      "id": "mission-20260630-012",
+      "date": "2026-06-30",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260630091416_1095_51.jpg",
+      "sha256": "4de508032f632822b470d472fd65178c5d8ad85a1eabecc695f957ea5d172f80",
+      "width": 888,
+      "height": 10721,
+      "segments": [
+        {
+          "fileName": "mission-20260630-012-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260630-012-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260630-012-03.jpg",
+          "width": 888,
+          "height": 2529
+        }
+      ]
+    },
+    {
+      "id": "morning-20260630-021",
+      "date": "2026-06-30",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260630091352_1094_51.jpg",
+      "sha256": "e8b877207e1ba2d7110440e079f8ff56c34b8c05aed1699dd09088c974a18f01",
+      "width": 1170,
+      "height": 5211,
+      "segments": [
+        {
+          "fileName": "morning-20260630-021-01.jpg",
+          "width": 1170,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260630-021-02.jpg",
+          "width": 1170,
+          "height": 1115
+        }
+      ]
+    },
+    {
+      "id": "mission-20260701-013",
+      "date": "2026-07-01",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260701090107_1098_51.jpg",
+      "sha256": "b6db9c19ea85d5424f2a82a501148522ceed4a18cc7b90e99e737f046a353efc",
+      "width": 888,
+      "height": 11965,
+      "segments": [
+        {
+          "fileName": "mission-20260701-013-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260701-013-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260701-013-03.jpg",
+          "width": 888,
+          "height": 3773
+        }
+      ]
+    },
+    {
+      "id": "morning-20260701-022",
+      "date": "2026-07-01",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260701090044_1097_51.jpg",
+      "sha256": "ba9c26d530cafb3cdeeb57e2453f6df9f1532738085ac2d3cd4f6c40524b2cb2",
+      "width": 1279,
+      "height": 4070,
+      "segments": [
+        {
+          "fileName": "morning-20260701-022-01.jpg",
+          "width": 1279,
+          "height": 4070
+        }
+      ]
+    },
+    {
+      "id": "mission-20260702-014",
+      "date": "2026-07-02",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260702090050_1101_51.jpg",
+      "sha256": "6a8de1a0407ac828f48075d234ee410b12958ae25228e1f810a26113e34fc7ce",
+      "width": 888,
+      "height": 10591,
+      "segments": [
+        {
+          "fileName": "mission-20260702-014-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260702-014-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260702-014-03.jpg",
+          "width": 888,
+          "height": 2399
+        }
+      ]
+    },
+    {
+      "id": "morning-20260702-023",
+      "date": "2026-07-02",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260702090020_1100_51.jpg",
+      "sha256": "566d80d5b803922e207ed56635364f02d788df5386f4766b02feedd23f0c274d",
+      "width": 1000,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260702-023-01.jpg",
+          "width": 1000,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260703-015",
+      "date": "2026-07-03",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260703090452_1106_51.jpg",
+      "sha256": "8e235d99d87b81f9cf6c0c21ae3e5aaad07d5baaf7dd9e8d9be1cbf635c895aa",
+      "width": 888,
+      "height": 13052,
+      "segments": [
+        {
+          "fileName": "mission-20260703-015-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260703-015-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260703-015-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260703-015-04.jpg",
+          "width": 888,
+          "height": 764
+        }
+      ]
+    },
+    {
+      "id": "morning-20260703-024",
+      "date": "2026-07-03",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260703090431_1105_51.jpg",
+      "sha256": "954c5ee903fb9ded9e16853cd2bc079f9d127b0f2f5b7dca0ca001fe56ba18c8",
+      "width": 1080,
+      "height": 4626,
+      "segments": [
+        {
+          "fileName": "morning-20260703-024-01.jpg",
+          "width": 1080,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260703-024-02.jpg",
+          "width": 1080,
+          "height": 530
+        }
+      ]
+    },
+    {
+      "id": "morning-20260706-025",
+      "date": "2026-07-06",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260706085617_1110_51.jpg",
+      "sha256": "b124c8be42279adb63c0cd948a76a5262ed43759eee2b54362c8ee8d7519fafb",
+      "width": 1272,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260706-025-01.jpg",
+          "width": 1272,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260707-016",
+      "date": "2026-07-07",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260707090210_1112_51.jpg",
+      "sha256": "7d650eac921edddcf9c58ae366f8d701bd39f39e257286d674aa1b3edfdb87e3",
+      "width": 888,
+      "height": 10623,
+      "segments": [
+        {
+          "fileName": "mission-20260707-016-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260707-016-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260707-016-03.jpg",
+          "width": 888,
+          "height": 2431
+        }
+      ]
+    },
+    {
+      "id": "morning-20260707-026",
+      "date": "2026-07-07",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260707130025_1116_51.jpg",
+      "sha256": "7a14ef1e835428df39476321a4f4c0334ad372bfaf4f9cddd0b0eabc1052e1f1",
+      "width": 888,
+      "height": 6205,
+      "segments": [
+        {
+          "fileName": "morning-20260707-026-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260707-026-02.jpg",
+          "width": 888,
+          "height": 2109
+        }
+      ]
+    },
+    {
+      "id": "mission-20260708-017",
+      "date": "2026-07-08",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260708090231_1118_51.jpg",
+      "sha256": "406ee3e550db1cf59e355b574968bf180ff59b0a075a7ebe8439b8bf80eae294",
+      "width": 888,
+      "height": 10580,
+      "segments": [
+        {
+          "fileName": "mission-20260708-017-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260708-017-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260708-017-03.jpg",
+          "width": 888,
+          "height": 2388
+        }
+      ]
+    },
+    {
+      "id": "morning-20260708-027",
+      "date": "2026-07-08",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260708094043_1122_51.jpg",
+      "sha256": "dc9555e072b38a7d8c7029e8bef8cd6ed397765b6f7caf44e1b7cc5475c9e97f",
+      "width": 888,
+      "height": 5326,
+      "segments": [
+        {
+          "fileName": "morning-20260708-027-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260708-027-02.jpg",
+          "width": 888,
+          "height": 1230
+        }
+      ]
+    },
+    {
+      "id": "mission-20260709-018",
+      "date": "2026-07-09",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260709085603_1132_51.jpg",
+      "sha256": "11c0dbfadc3a241a89036392cb4f9c1151fbafc61fbb7915aeda48cb89d5d9c0",
+      "width": 888,
+      "height": 9878,
+      "segments": [
+        {
+          "fileName": "mission-20260709-018-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260709-018-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260709-018-03.jpg",
+          "width": 888,
+          "height": 1686
+        }
+      ]
+    },
+    {
+      "id": "morning-20260709-028",
+      "date": "2026-07-09",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260709085813_1134_51.jpg",
+      "sha256": "23338771ac838dbbff9b517bf9757bdbd24d7be019550ea936be22eb376cb9ee",
+      "width": 934,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260709-028-01.jpg",
+          "width": 934,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260710-019",
+      "date": "2026-07-10",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260710090538_1136_51.jpg",
+      "sha256": "16bfcab5fbf3e7ff3136ad11f157f3c86b6593d3621a9f84ee0616000a12f044",
+      "width": 888,
+      "height": 11653,
+      "segments": [
+        {
+          "fileName": "mission-20260710-019-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260710-019-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260710-019-03.jpg",
+          "width": 888,
+          "height": 3461
+        }
+      ]
+    },
+    {
+      "id": "morning-20260710-029",
+      "date": "2026-07-10",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260710090528_1135_51.jpg",
+      "sha256": "d0db462e83519229b625e9365a71f9f57081f3d2fc2e9ab6f71c70b6e7ef8b54",
+      "width": 888,
+      "height": 6602,
+      "segments": [
+        {
+          "fileName": "morning-20260710-029-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260710-029-02.jpg",
+          "width": 888,
+          "height": 2506
+        }
+      ]
+    },
+    {
+      "id": "mission-20260711-020",
+      "date": "2026-07-11",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260711085858_1141_51.jpg",
+      "sha256": "00e39982b5826dcd23d76b446330fa411402edd8f1e560a9fe6e2decb31295ad",
+      "width": 888,
+      "height": 9815,
+      "segments": [
+        {
+          "fileName": "mission-20260711-020-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260711-020-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260711-020-03.jpg",
+          "width": 888,
+          "height": 1623
+        }
+      ]
+    },
+    {
+      "id": "morning-20260711-030",
+      "date": "2026-07-11",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260711085819_1140_51.jpg",
+      "sha256": "974806cd2c607934b5cf98e7689ebc07bc91208df03d56417d323b05599355ec",
+      "width": 1258,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260711-030-01.jpg",
+          "width": 1258,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260713-031",
+      "date": "2026-07-13",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260713085707_1145_51.jpg",
+      "sha256": "bbccbcd230fc02dcd4f034ba9b1c67defa31ebc8ae1c0059491ddffc0f98f173",
+      "width": 858,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260713-031-01.jpg",
+          "width": 858,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260714-021",
+      "date": "2026-07-14",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260714091311_1148_51.jpg",
+      "sha256": "d1db373234db815ae9218ad6501600b3920958a369ea4ce8456e07545da7e70e",
+      "width": 888,
+      "height": 13109,
+      "segments": [
+        {
+          "fileName": "mission-20260714-021-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260714-021-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260714-021-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260714-021-04.jpg",
+          "width": 888,
+          "height": 821
+        }
+      ]
+    },
+    {
+      "id": "mission-20260714-022",
+      "date": "2026-07-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260714103604_1150_51.jpg",
+      "sha256": "15d48103c3a5d160cc804f7bcc2d557aa9330dd564bd787c9320e02f4a4e63c0",
+      "width": 936,
+      "height": 6173,
+      "segments": [
+        {
+          "fileName": "mission-20260714-022-01.jpg",
+          "width": 936,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260714-022-02.jpg",
+          "width": 936,
+          "height": 2077
+        }
+      ],
+      "classificationOverride": "图片内容为 MS 解经／马可福音逐节查经，人工归入晨修"
+    },
+    {
+      "id": "morning-20260714-032",
+      "date": "2026-07-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260714091254_1147_51.jpg",
+      "sha256": "aef7996c14f7bacfb54f1cb327d5e207e076729a011ee07651117fe74a3c20cf",
+      "width": 1248,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260714-032-01.jpg",
+          "width": 1248,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260715-023",
+      "date": "2026-07-15",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260715090603_1154_51.jpg",
+      "sha256": "ecb22640a58b9c846e3d931a7e8dfc46a3ed26880d75cac439759a364a3e0fa2",
+      "width": 888,
+      "height": 11507,
+      "segments": [
+        {
+          "fileName": "mission-20260715-023-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260715-023-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260715-023-03.jpg",
+          "width": 888,
+          "height": 3315
+        }
+      ]
+    },
+    {
+      "id": "morning-20260715-033",
+      "date": "2026-07-15",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260715090537_1153_51.jpg",
+      "sha256": "63c775604eb7b2d4f07b113f9fc8f4f4636a3a51a25b64a31a0f96a134ad7391",
+      "width": 1080,
+      "height": 4386,
+      "segments": [
+        {
+          "fileName": "morning-20260715-033-01.jpg",
+          "width": 1080,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260715-033-02.jpg",
+          "width": 1080,
+          "height": 290
+        }
+      ]
+    },
+    {
+      "id": "mission-20260716-024",
+      "date": "2026-07-16",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260716085658_1159_51.jpg",
+      "sha256": "e8c36353d377d824d714e7dfe3f8e271bcd5a4778d14a7b64e43758a101a8512",
+      "width": 888,
+      "height": 10487,
+      "segments": [
+        {
+          "fileName": "mission-20260716-024-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260716-024-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260716-024-03.jpg",
+          "width": 888,
+          "height": 2295
+        }
+      ]
+    },
+    {
+      "id": "morning-20260716-034",
+      "date": "2026-07-16",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260716085631_1158_51.jpg",
+      "sha256": "29160707aa67a487f408face0b2070fe7e8a73be5866e532cafc9a4628454f20",
+      "width": 988,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260716-034-01.jpg",
+          "width": 988,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260717-025",
+      "date": "2026-07-17",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260717090005_1164_51.jpg",
+      "sha256": "06757609ea02757fe421eed86cbf64fa5d8c8a4592343f2ba7e828e187fc55be",
+      "width": 888,
+      "height": 10407,
+      "segments": [
+        {
+          "fileName": "mission-20260717-025-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260717-025-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260717-025-03.jpg",
+          "width": 888,
+          "height": 2215
+        }
+      ]
+    },
+    {
+      "id": "morning-20260717-035",
+      "date": "2026-07-17",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260717085947_1163_51.jpg",
+      "sha256": "999639611bd2f3264a6806e5e736394963f3a606039f9b8abd12488a2a7b2d23",
+      "width": 1302,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260717-035-01.jpg",
+          "width": 1302,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260718-026",
+      "date": "2026-07-18",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260718090608_1169_51.jpg",
+      "sha256": "b32cf54b874222e4b0052893136b9697460704bc8641e349922cfb1b717352f9",
+      "width": 888,
+      "height": 10938,
+      "segments": [
+        {
+          "fileName": "mission-20260718-026-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260718-026-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260718-026-03.jpg",
+          "width": 888,
+          "height": 2746
+        }
+      ]
+    },
+    {
+      "id": "morning-20260718-036",
+      "date": "2026-07-18",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260718090549_1168_51.jpg",
+      "sha256": "7b5a5a4402e8147dfa02296c415c2ad6084466d7f45c8a0909b060db27f5a6a3",
+      "width": 1108,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260718-036-01.jpg",
+          "width": 1108,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260719-037",
+      "date": "2026-07-19",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260719090611_1173_51.jpg",
+      "sha256": "e58da58a8fa7970173d1b40f632b73702c956c62d79212361d3dac19ae56d097",
+      "width": 1080,
+      "height": 3386,
+      "segments": [
+        {
+          "fileName": "morning-20260719-037-01.jpg",
+          "width": 1080,
+          "height": 3386
+        }
+      ]
+    },
+    {
+      "id": "morning-20260720-038",
+      "date": "2026-07-20",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260720090958_1176_51.jpg",
+      "sha256": "c163655783b5b3dc69d0b228a401e27e56eaf862b1d79392c50cbf2d196b5fbc",
+      "width": 946,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260720-038-01.jpg",
+          "width": 946,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260721-027",
+      "date": "2026-07-21",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260721090212_1178_51.jpg",
+      "sha256": "71152b3b192022f293d50ee8a2017a2e8fcbeb65774090bb64b14ca76b220f14",
+      "width": 888,
+      "height": 11408,
+      "segments": [
+        {
+          "fileName": "mission-20260721-027-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260721-027-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260721-027-03.jpg",
+          "width": 888,
+          "height": 3216
+        }
+      ]
+    },
+    {
+      "id": "morning-20260721-039",
+      "date": "2026-07-21",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260721090136_1177_51.jpg",
+      "sha256": "f8680bbaa971dc4db99b304752233c6654e89c83227f6e33cb09e6d0a6616369",
+      "width": 1279,
+      "height": 3895,
+      "segments": [
+        {
+          "fileName": "morning-20260721-039-01.jpg",
+          "width": 1279,
+          "height": 3895
+        }
+      ]
+    },
+    {
+      "id": "mission-20260722-028",
+      "date": "2026-07-22",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260722090054_1181_51.jpg",
+      "sha256": "1e5751354f1b21e0aabfbbdd15c184210b8427f8ee4c8749421853de012f11cb",
+      "width": 888,
+      "height": 10736,
+      "segments": [
+        {
+          "fileName": "mission-20260722-028-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260722-028-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260722-028-03.jpg",
+          "width": 888,
+          "height": 2544
+        }
+      ]
+    },
+    {
+      "id": "morning-20260722-040",
+      "date": "2026-07-22",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260722085958_1180_51.jpg",
+      "sha256": "c55f7261225bfaeddc7710bf7389272bc19398c756fbf5d223f7e0aba944e2dc",
+      "width": 1110,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260722-040-01.jpg",
+          "width": 1110,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260723-029",
+      "date": "2026-07-23",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260723090040_1186_51.jpg",
+      "sha256": "9a5489b8ce39ec38e809e244764971f11a7b57f06adb6eb8ddf56f08fe079bb2",
+      "width": 888,
+      "height": 13946,
+      "segments": [
+        {
+          "fileName": "mission-20260723-029-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260723-029-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260723-029-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260723-029-04.jpg",
+          "width": 888,
+          "height": 1658
+        }
+      ]
+    },
+    {
+      "id": "morning-20260723-041",
+      "date": "2026-07-23",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260723085956_1185_51.jpg",
+      "sha256": "cf567dd7c7f9c8ec0e39e0969846cf26fcd56114d01e8671f06625ead9436f8f",
+      "width": 896,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260723-041-01.jpg",
+          "width": 896,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260724-030",
+      "date": "2026-07-24",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260724090019_1191_51.jpg",
+      "sha256": "af53cc4c70f58fa271804709d242e62ea7b14583fd689fed046c091bf67710cd",
+      "width": 888,
+      "height": 7730,
+      "segments": [
+        {
+          "fileName": "mission-20260724-030-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260724-030-02.jpg",
+          "width": 888,
+          "height": 3634
+        }
+      ]
+    },
+    {
+      "id": "morning-20260724-042",
+      "date": "2026-07-24",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260724090003_1190_51.jpg",
+      "sha256": "fe587b1c0e026e5d5f74c515b6b05e61970422a4f705a4b576c00acf72f78a5d",
+      "width": 1126,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260724-042-01.jpg",
+          "width": 1126,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260725-031",
+      "date": "2026-07-25",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260725090011_1196_51.jpg",
+      "sha256": "7c69d9403c4faa49dbe8778716d5daa565d8667e09459cdfbad99d853b14d775",
+      "width": 888,
+      "height": 12532,
+      "segments": [
+        {
+          "fileName": "mission-20260725-031-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260725-031-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260725-031-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260725-031-04.jpg",
+          "width": 888,
+          "height": 244
+        }
+      ]
+    },
+    {
+      "id": "morning-20260725-043",
+      "date": "2026-07-25",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260725085943_1195_51.jpg",
+      "sha256": "884cabe52104d360b530f2633f088d25cb4ad5f39725b7c401e6696ecc0b739d",
+      "width": 908,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260725-043-01.jpg",
+          "width": 908,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260726-044",
+      "date": "2026-07-26",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260726085946_1200_51.jpg",
+      "sha256": "81cc8a7d3b5599402c92972ebcdfc789a4042e613f7bbc0ce6cfbb3948b72075",
+      "width": 1228,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260726-044-01.jpg",
+          "width": 1228,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260727-045",
+      "date": "2026-07-27",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260727085635_1202_51.jpg",
+      "sha256": "7982e3e28927641f8fa7b4d68d3d2ab47ea5147649d5b8b19796f203930ba1c1",
+      "width": 926,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260727-045-01.jpg",
+          "width": 926,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260728-032",
+      "date": "2026-07-28",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260728090030_1206_51.jpg",
+      "sha256": "583af08ef092ce5d1f34d2f8675d637bef9d1e791928aa81674028e2d5c458ae",
+      "width": 888,
+      "height": 12335,
+      "segments": [
+        {
+          "fileName": "mission-20260728-032-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260728-032-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260728-032-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260728-032-04.jpg",
+          "width": 888,
+          "height": 47
+        }
+      ]
+    },
+    {
+      "id": "morning-20260728-046",
+      "date": "2026-07-28",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260728090017_1205_51.jpg",
+      "sha256": "29881b6b4da9ff820d8e473bfac0a10b044977f72dacc5f2f138a4820b135f41",
+      "width": 1066,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260728-046-01.jpg",
+          "width": 1066,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260729-033",
+      "date": "2026-07-29",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260729085854_1209_51.jpg",
+      "sha256": "b009548e7454a249d311cabdac3bffbdbbb442e4b68b14ca9b4683601c9439f6",
+      "width": 888,
+      "height": 11566,
+      "segments": [
+        {
+          "fileName": "mission-20260729-033-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260729-033-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260729-033-03.jpg",
+          "width": 888,
+          "height": 3374
+        }
+      ]
+    },
+    {
+      "id": "mission-20260730-034",
+      "date": "2026-07-30",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260730090057_1212_51.jpg",
+      "sha256": "3eaf96b96800f6ce1a064dcd1428014c01f3c72c0d00e33d846e475388c7000f",
+      "width": 888,
+      "height": 11689,
+      "segments": [
+        {
+          "fileName": "mission-20260730-034-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260730-034-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260730-034-03.jpg",
+          "width": 888,
+          "height": 3497
+        }
+      ]
+    },
+    {
+      "id": "morning-20260730-047",
+      "date": "2026-07-30",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260730090049_1211_51.jpg",
+      "sha256": "b5dd26f778c7444022e575f1bd29ffef26498eb6282dc22ff6e9ee6f9be68cb9",
+      "width": 1182,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260730-047-01.jpg",
+          "width": 1182,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260731-035",
+      "date": "2026-07-31",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260731090221_2_169.jpg",
+      "sha256": "a310167222f77cc9eda7ece81998c81df2e049c66669f058b2c12020c52431ad",
+      "width": 888,
+      "height": 9271,
+      "segments": [
+        {
+          "fileName": "mission-20260731-035-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260731-035-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260731-035-03.jpg",
+          "width": 888,
+          "height": 1079
+        }
+      ]
+    },
+    {
+      "id": "morning-20260731-048",
+      "date": "2026-07-31",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260731090200_1_169.jpg",
+      "sha256": "5b5ab86593b784edae2c4d15c6921e21c41e569cf36c65eb22fffe44ed234955",
+      "width": 1222,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260731-048-01.jpg",
+          "width": 1222,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260801-036",
+      "date": "2026-08-01",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260801090040_4_169.jpg",
+      "sha256": "7a22b1f68f526f10e9d05a40bf70f5481b3d17c9424d524f52c63e380e93b89b",
+      "width": 888,
+      "height": 9493,
+      "segments": [
+        {
+          "fileName": "mission-20260801-036-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260801-036-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260801-036-03.jpg",
+          "width": 888,
+          "height": 1301
+        }
+      ]
+    },
+    {
+      "id": "morning-20260801-049",
+      "date": "2026-08-01",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260801090021_3_169.jpg",
+      "sha256": "f36bdf962777f5f2817f2d17317a0b7bd6f0dbd4f4e6e3135c719d7802ec8690",
+      "width": 1046,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260801-049-01.jpg",
+          "width": 1046,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260804-037",
+      "date": "2026-08-04",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260804090306_9_169(1).jpg",
+      "sha256": "6dbdcea7e21473c1d5f9aeb7c3b63289094733330aa94687f71e71c1d6ca2102",
+      "width": 888,
+      "height": 12944,
+      "segments": [
+        {
+          "fileName": "mission-20260804-037-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260804-037-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260804-037-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260804-037-04.jpg",
+          "width": 888,
+          "height": 656
+        }
+      ]
+    },
+    {
+      "id": "morning-20260804-050",
+      "date": "2026-08-04",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260804090243_8_169.jpg",
+      "sha256": "fecdb2eeb812a231e5a426f4c8ae5474b8c303be40d12500944781ca5bc36ada",
+      "width": 934,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260804-050-01.jpg",
+          "width": 934,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260805-038",
+      "date": "2026-08-05",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260805090244_14_169.jpg",
+      "sha256": "620c812eefacaa36971b033499891b0e02363c054f140f10d7579c0c29f7980e",
+      "width": 888,
+      "height": 11270,
+      "segments": [
+        {
+          "fileName": "mission-20260805-038-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260805-038-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260805-038-03.jpg",
+          "width": 888,
+          "height": 3078
+        }
+      ]
+    },
+    {
+      "id": "morning-20260805-051",
+      "date": "2026-08-05",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260805090230_13_169.jpg",
+      "sha256": "7c7a55008ca589d6fe3b99b95bede5e07cfb8dfe88fb00414531fe474f0642f8",
+      "width": 908,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260805-051-01.jpg",
+          "width": 908,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260806-039",
+      "date": "2026-08-06",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260806090212_19_169.jpg",
+      "sha256": "bd35300efd6e2b10a019d2a0c69f61de737337c9c00a25e80d75b3cdcdb6c67d",
+      "width": 888,
+      "height": 11540,
+      "segments": [
+        {
+          "fileName": "mission-20260806-039-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260806-039-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260806-039-03.jpg",
+          "width": 888,
+          "height": 3348
+        }
+      ]
+    },
+    {
+      "id": "morning-20260806-052",
+      "date": "2026-08-06",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260806090157_18_169.jpg",
+      "sha256": "fd508118dd7122728291af0885817909c58c861f7e5a2366b892c82e5aec7c62",
+      "width": 942,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260806-052-01.jpg",
+          "width": 942,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260807-040",
+      "date": "2026-08-07",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260807085902_24_169(1).jpg",
+      "sha256": "46f9f1751ee37c539aa915950642b594ed5850850db485e50ba63ef87a05bd15",
+      "width": 888,
+      "height": 13129,
+      "segments": [
+        {
+          "fileName": "mission-20260807-040-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260807-040-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260807-040-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260807-040-04.jpg",
+          "width": 888,
+          "height": 841
+        }
+      ]
+    },
+    {
+      "id": "morning-20260807-053",
+      "date": "2026-08-07",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260807085847_23_169.jpg",
+      "sha256": "6089b54a1b80aa1f5e38f8cf3c5fe1c43e6489d91fcda08c7d936e57fba99707",
+      "width": 1074,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260807-053-01.jpg",
+          "width": 1074,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260808-041",
+      "date": "2026-08-08",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260808085906_28_169.jpg",
+      "sha256": "0e74406f89f95a1f326e2cf4288af3703a31e5376f128ee7cdc7f25bd17c62de",
+      "width": 888,
+      "height": 11298,
+      "segments": [
+        {
+          "fileName": "mission-20260808-041-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260808-041-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260808-041-03.jpg",
+          "width": 888,
+          "height": 3106
+        }
+      ]
+    },
+    {
+      "id": "morning-20260808-054",
+      "date": "2026-08-08",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260808085841_27_169.jpg",
+      "sha256": "80da482caf81efddc2e8acc00fa8840ba78b996b354e8119312d5da6392584f4",
+      "width": 1254,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260808-054-01.jpg",
+          "width": 1254,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260809-055",
+      "date": "2026-08-09",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260809090238_32_169.jpg",
+      "sha256": "881c72cdf44ee6482f5b597c18bf3a91e38d46dd91d4be5f5ec0d4deb9dda706",
+      "width": 1246,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260809-055-01.jpg",
+          "width": 1246,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260810-056",
+      "date": "2026-08-10",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260810090431_34_169.jpg",
+      "sha256": "4d65746e9f1782f0835cf8f34eb06bfcabc30e07aaf6d41abf1bb11e8e791c66",
+      "width": 1170,
+      "height": 5841,
+      "segments": [
+        {
+          "fileName": "morning-20260810-056-01.jpg",
+          "width": 1170,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260810-056-02.jpg",
+          "width": 1170,
+          "height": 1745
+        }
+      ]
+    },
+    {
+      "id": "mission-20260811-042",
+      "date": "2026-08-11",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260811085951_37_169.jpg",
+      "sha256": "9e47d648b86d810263343fc6b770ccc20169f3506d0789e16a8b1a07bfeffb23",
+      "width": 888,
+      "height": 10749,
+      "segments": [
+        {
+          "fileName": "mission-20260811-042-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260811-042-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260811-042-03.jpg",
+          "width": 888,
+          "height": 2557
+        }
+      ]
+    },
+    {
+      "id": "morning-20260811-057",
+      "date": "2026-08-11",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260811085923_36_169.jpg",
+      "sha256": "408512f43e09fece23815f19c59869b5eabe74bb61c598dae4fc2231efd910e6",
+      "width": 1279,
+      "height": 3826,
+      "segments": [
+        {
+          "fileName": "morning-20260811-057-01.jpg",
+          "width": 1279,
+          "height": 3826
+        }
+      ]
+    },
+    {
+      "id": "mission-20260812-043",
+      "date": "2026-08-12",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260812090131_40_169.jpg",
+      "sha256": "8c66117fe04ce98396ad37df087b5dc82720433002347bbdc2ce36bc790172b1",
+      "width": 888,
+      "height": 10867,
+      "segments": [
+        {
+          "fileName": "mission-20260812-043-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260812-043-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260812-043-03.jpg",
+          "width": 888,
+          "height": 2675
+        }
+      ]
+    },
+    {
+      "id": "morning-20260812-058",
+      "date": "2026-08-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260812090112_39_169.jpg",
+      "sha256": "e5ccd1a153692e1979df57e9be9f6dca63b47389c5b2d72796f78e2f2df860a7",
+      "width": 780,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260812-058-01.jpg",
+          "width": 780,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260813-044",
+      "date": "2026-08-13",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260813090011_45_169.jpg",
+      "sha256": "b708e611c5df35655298ddc89e28bf3b0d74ee38c48209ebb06ac2aee565dabe",
+      "width": 888,
+      "height": 13243,
+      "segments": [
+        {
+          "fileName": "mission-20260813-044-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260813-044-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260813-044-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260813-044-04.jpg",
+          "width": 888,
+          "height": 955
+        }
+      ]
+    },
+    {
+      "id": "morning-20260813-059",
+      "date": "2026-08-13",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260813085958_44_169.jpg",
+      "sha256": "dbda6e8debd6ed4c0905a7929e94e082d6e8ae089b0596051060cfab254e6871",
+      "width": 1114,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260813-059-01.jpg",
+          "width": 1114,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260814-045",
+      "date": "2026-08-14",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260814085959_49_169.jpg",
+      "sha256": "9fb4e5b5d8663b237def585b126c25820ac65d9252def52a3362497ebde37185",
+      "width": 888,
+      "height": 11645,
+      "segments": [
+        {
+          "fileName": "mission-20260814-045-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260814-045-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260814-045-03.jpg",
+          "width": 888,
+          "height": 3453
+        }
+      ]
+    },
+    {
+      "id": "morning-20260814-060",
+      "date": "2026-08-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260814085928_47_169.jpg",
+      "sha256": "113a206319066ac38f5bb050375e765f163b9780f9de5c9e71865aff0055454e",
+      "width": 1024,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260814-060-01.jpg",
+          "width": 1024,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260815-046",
+      "date": "2026-08-15",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260815085953_53_169.jpg",
+      "sha256": "16ea01091f6cf23d6b1283e9c2e146b3c50110d18720bc1a8f5c04801cfde778",
+      "width": 888,
+      "height": 12496,
+      "segments": [
+        {
+          "fileName": "mission-20260815-046-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260815-046-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260815-046-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260815-046-04.jpg",
+          "width": 888,
+          "height": 208
+        }
+      ]
+    },
+    {
+      "id": "morning-20260815-061",
+      "date": "2026-08-15",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260815085917_52_169.jpg",
+      "sha256": "ffbb05bf3073b41b43e1e7431d7acdeb9e5e4e795aff97d258d7d76d1cae8bfb",
+      "width": 1172,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260815-061-01.jpg",
+          "width": 1172,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260816-062",
+      "date": "2026-08-16",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260816102057_57_169.jpg",
+      "sha256": "0ef2dfd622642d0b884f2438ad0e53294fc515f96a9d88581ee73a3865f64fd7",
+      "width": 1280,
+      "height": 3356,
+      "segments": [
+        {
+          "fileName": "morning-20260816-062-01.jpg",
+          "width": 1280,
+          "height": 3356
+        }
+      ]
+    },
+    {
+      "id": "morning-20260817-063",
+      "date": "2026-08-17",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260817085834_59_169.jpg",
+      "sha256": "147bf5fab74456cdb562657774fab27d932a3725f4996d65990ee0a0f20a8f04",
+      "width": 1279,
+      "height": 4089,
+      "segments": [
+        {
+          "fileName": "morning-20260817-063-01.jpg",
+          "width": 1279,
+          "height": 4089
+        }
+      ]
+    },
+    {
+      "id": "mission-20260818-047",
+      "date": "2026-08-18",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260818090256_62_169.jpg",
+      "sha256": "8051c64d24ed9a76bd8f6f42c43feb1854c2d110d782c5e2beb23f061f71f22a",
+      "width": 888,
+      "height": 13421,
+      "segments": [
+        {
+          "fileName": "mission-20260818-047-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260818-047-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260818-047-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260818-047-04.jpg",
+          "width": 888,
+          "height": 1133
+        }
+      ]
+    },
+    {
+      "id": "morning-20260818-064",
+      "date": "2026-08-18",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260818090243_61_169.jpg",
+      "sha256": "da7157aeaa1395bf26429f4dfe4f4dbb2737b48356dc9d0822e7ccff14ee9718",
+      "width": 976,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260818-064-01.jpg",
+          "width": 976,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260819-048",
+      "date": "2026-08-19",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260819090326_67_169.jpg",
+      "sha256": "216fcee9dd5ad6a4f06ad28ce1191204929d2d6aa3953376fdec32f2544f0b78",
+      "width": 888,
+      "height": 12193,
+      "segments": [
+        {
+          "fileName": "mission-20260819-048-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260819-048-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260819-048-03.jpg",
+          "width": 888,
+          "height": 4001
+        }
+      ]
+    },
+    {
+      "id": "morning-20260819-065",
+      "date": "2026-08-19",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260819090310_66_169.jpg",
+      "sha256": "ca53f59ee8898f75974180345169e4af0b05970990d4341af84a360dca30c199",
+      "width": 1144,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260819-065-01.jpg",
+          "width": 1144,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260820-049",
+      "date": "2026-08-20",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260820090123_70_169.jpg",
+      "sha256": "a8948575b8817f0a11057e7dc5ca5dd8aa1e6391a19c69e51f79add5fb22fcea",
+      "width": 888,
+      "height": 11882,
+      "segments": [
+        {
+          "fileName": "mission-20260820-049-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260820-049-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260820-049-03.jpg",
+          "width": 888,
+          "height": 3690
+        }
+      ]
+    },
+    {
+      "id": "morning-20260820-066",
+      "date": "2026-08-20",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260820090109_69_169.jpg",
+      "sha256": "5b16c2693a69ec96771b4d7c74f8c469a44e76ac2265c39ecb3485e95d85e38d",
+      "width": 1162,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260820-066-01.jpg",
+          "width": 1162,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260821-050",
+      "date": "2026-08-21",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260821090316_75_169.jpg",
+      "sha256": "1468153bfc4e4f5e185d46e7c1596a3b67b45f424f1eff4a59c37164679640aa",
+      "width": 888,
+      "height": 11036,
+      "segments": [
+        {
+          "fileName": "mission-20260821-050-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260821-050-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260821-050-03.jpg",
+          "width": 888,
+          "height": 2844
+        }
+      ]
+    },
+    {
+      "id": "morning-20260821-067",
+      "date": "2026-08-21",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260821090301_74_169.jpg",
+      "sha256": "aa884d20cf3a8ecf166c11675b426e40c1f7eaac008754d9f2c6be8a7dc5c91e",
+      "width": 1208,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260821-067-01.jpg",
+          "width": 1208,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260822-051",
+      "date": "2026-08-22",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260822085935_80_169.jpg",
+      "sha256": "08a4d2eaa8bc92f3848e41cada6c4883a8c0c9bd9b31eed05f2268ee10947435",
+      "width": 888,
+      "height": 11582,
+      "segments": [
+        {
+          "fileName": "mission-20260822-051-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260822-051-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260822-051-03.jpg",
+          "width": 888,
+          "height": 3390
+        }
+      ]
+    },
+    {
+      "id": "morning-20260822-068",
+      "date": "2026-08-22",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260822085905_79_169.jpg",
+      "sha256": "af4467ad01f71dbe05352a6d995a25daababcb2ab0858eb941ec6f5c25c88850",
+      "width": 1222,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260822-068-01.jpg",
+          "width": 1222,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260823-069",
+      "date": "2026-08-23",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260823090107_84_169.jpg",
+      "sha256": "1302127dc76338b8087970a7c04467a385f8be596eb693094727a5d6d9a06996",
+      "width": 1279,
+      "height": 3843,
+      "segments": [
+        {
+          "fileName": "morning-20260823-069-01.jpg",
+          "width": 1279,
+          "height": 3843
+        }
+      ]
+    },
+    {
+      "id": "morning-20260824-070",
+      "date": "2026-08-24",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260824085921_87_169.jpg",
+      "sha256": "122f48a6652ed5f81eb4177d7ea11158864bc9916ea489a50e16fe9e66ace6ef",
+      "width": 1234,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260824-070-01.jpg",
+          "width": 1234,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260825-052",
+      "date": "2026-08-25",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260825090052_90_169.jpg",
+      "sha256": "ae9926e7d15cb6f1306417549cf45630753682e18f0ec3adf2918c009121742e",
+      "width": 888,
+      "height": 11741,
+      "segments": [
+        {
+          "fileName": "mission-20260825-052-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260825-052-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260825-052-03.jpg",
+          "width": 888,
+          "height": 3549
+        }
+      ]
+    },
+    {
+      "id": "morning-20260825-071",
+      "date": "2026-08-25",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260825085950_88_169.jpg",
+      "sha256": "7e2774ca27905c9bd47b1ed129e2152948157da343da6fe3e97066b1effc3308",
+      "width": 1224,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260825-071-01.jpg",
+          "width": 1224,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260826-053",
+      "date": "2026-08-26",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260826090014_94_169.jpg",
+      "sha256": "2d074be28d5372dd6bedef513eeb0107fb58e49169fa6530ec5aa317a17e145a",
+      "width": 888,
+      "height": 13504,
+      "segments": [
+        {
+          "fileName": "mission-20260826-053-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260826-053-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260826-053-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260826-053-04.jpg",
+          "width": 888,
+          "height": 1216
+        }
+      ]
+    },
+    {
+      "id": "morning-20260826-072",
+      "date": "2026-08-26",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260826085949_93_169.jpg",
+      "sha256": "3e21242a9ca4ac3648d227f0777143924dd71230f7bf7889beb7d9d9cc24a311",
+      "width": 1164,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260826-072-01.jpg",
+          "width": 1164,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260827-054",
+      "date": "2026-08-27",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260827090039_97_169.jpg",
+      "sha256": "c789e244b62804ed6b60c282541bb9d4475126d9145b7f7a5d773fb3d4554f9a",
+      "width": 888,
+      "height": 9031,
+      "segments": [
+        {
+          "fileName": "mission-20260827-054-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260827-054-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260827-054-03.jpg",
+          "width": 888,
+          "height": 839
+        }
+      ]
+    },
+    {
+      "id": "morning-20260827-073",
+      "date": "2026-08-27",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260827090013_96_169.jpg",
+      "sha256": "ae7d9c723649847ab9f79a9bc05f579163af191833d09eae3dee4fe989924d20",
+      "width": 1279,
+      "height": 3739,
+      "segments": [
+        {
+          "fileName": "morning-20260827-073-01.jpg",
+          "width": 1279,
+          "height": 3739
+        }
+      ]
+    },
+    {
+      "id": "mission-20260828-055",
+      "date": "2026-08-28",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260828090034_100_169.jpg",
+      "sha256": "43d5f4f3aaf18e03df57334a89eabc26eea8927862fd6c578ecf01eda927869f",
+      "width": 888,
+      "height": 12292,
+      "segments": [
+        {
+          "fileName": "mission-20260828-055-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260828-055-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260828-055-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260828-055-04.jpg",
+          "width": 888,
+          "height": 4
+        }
+      ]
+    },
+    {
+      "id": "morning-20260828-074",
+      "date": "2026-08-28",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260828090013_99_169.jpg",
+      "sha256": "5f7897b3ee64d7390edd19fd34eb0bf743bb9cf7ba22cc6c2de3cb514f116ded",
+      "width": 1279,
+      "height": 4062,
+      "segments": [
+        {
+          "fileName": "morning-20260828-074-01.jpg",
+          "width": 1279,
+          "height": 4062
+        }
+      ]
+    },
+    {
+      "id": "mission-20260829-056",
+      "date": "2026-08-29",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260829090233_105_169.jpg",
+      "sha256": "7f435ec9f7b10cb2d9d4411690562eb46f9abdc56cbeb6f9601ba5725e143d4b",
+      "width": 888,
+      "height": 13723,
+      "segments": [
+        {
+          "fileName": "mission-20260829-056-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260829-056-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260829-056-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260829-056-04.jpg",
+          "width": 888,
+          "height": 1435
+        }
+      ]
+    },
+    {
+      "id": "morning-20260829-075",
+      "date": "2026-08-29",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260829090211_104_169.jpg",
+      "sha256": "cde4205ba41475b0ba0fe224ed1ce2d293679fc0a9a04ad09a781acfe81f636f",
+      "width": 1279,
+      "height": 3963,
+      "segments": [
+        {
+          "fileName": "morning-20260829-075-01.jpg",
+          "width": 1279,
+          "height": 3963
+        }
+      ]
+    },
+    {
+      "id": "morning-20260830-076",
+      "date": "2026-08-30",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260830091056_109_169.jpg",
+      "sha256": "d4e7a70bc9b1c7b840e7e2fd02959be0a5276ae0e3957668bec714a384f3fac8",
+      "width": 1024,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260830-076-01.jpg",
+          "width": 1024,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260831-077",
+      "date": "2026-08-31",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260831090002_113_169.jpg",
+      "sha256": "25ee77b98c76d6342df8690fde70f8af8e330cb0bac4335640fb5e2056d7b2b1",
+      "width": 1166,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260831-077-01.jpg",
+          "width": 1166,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260901-057",
+      "date": "2026-09-01",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260901091023_117_169.jpg",
+      "sha256": "7ac5ef5060502975174ad7d5219b1c24066e181484b54395daf11285c95a8148",
+      "width": 888,
+      "height": 11917,
+      "segments": [
+        {
+          "fileName": "mission-20260901-057-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260901-057-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260901-057-03.jpg",
+          "width": 888,
+          "height": 3725
+        }
+      ]
+    },
+    {
+      "id": "morning-20260901-078",
+      "date": "2026-09-01",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260901090958_116_169.jpg",
+      "sha256": "9dfedb1ce1c5c93029b555d56a4c927c25205c11a41ee2af19ff106bd7f84142",
+      "width": 1158,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260901-078-01.jpg",
+          "width": 1158,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260902-058",
+      "date": "2026-09-02",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260902090148_122_169.jpg",
+      "sha256": "e756195773018c739dc5123407bbf7b71eb910a1965e9d01e9e703ad80724b30",
+      "width": 888,
+      "height": 13517,
+      "segments": [
+        {
+          "fileName": "mission-20260902-058-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260902-058-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260902-058-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260902-058-04.jpg",
+          "width": 888,
+          "height": 1229
+        }
+      ]
+    },
+    {
+      "id": "morning-20260902-079",
+      "date": "2026-09-02",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260902090119_121_169.jpg",
+      "sha256": "c6a5074633bbf18e4dbb2b1ef35261a745962fe37d3f172b7939682a8fb91ee3",
+      "width": 990,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260902-079-01.jpg",
+          "width": 990,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260903-059",
+      "date": "2026-09-03",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260903090043_127_169.jpg",
+      "sha256": "6767ea30270192209bb84ea8be719a3125e6a938012e2e5a2fb654000534e3fa",
+      "width": 888,
+      "height": 10218,
+      "segments": [
+        {
+          "fileName": "mission-20260903-059-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260903-059-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260903-059-03.jpg",
+          "width": 888,
+          "height": 2026
+        }
+      ]
+    },
+    {
+      "id": "morning-20260903-080",
+      "date": "2026-09-03",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260903090014_126_169.jpg",
+      "sha256": "d73f0428208445f10b266378f4faeb59afc43730a1810301de09bc9a65a86ab6",
+      "width": 1279,
+      "height": 3651,
+      "segments": [
+        {
+          "fileName": "morning-20260903-080-01.jpg",
+          "width": 1279,
+          "height": 3651
+        }
+      ]
+    },
+    {
+      "id": "mission-20260904-060",
+      "date": "2026-09-04",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260904090523_132_169.jpg",
+      "sha256": "57e268152b6aa2e0590759b3dcabe04dc53cddd29964be829e45a18f31499073",
+      "width": 888,
+      "height": 11780,
+      "segments": [
+        {
+          "fileName": "mission-20260904-060-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260904-060-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260904-060-03.jpg",
+          "width": 888,
+          "height": 3588
+        }
+      ]
+    },
+    {
+      "id": "morning-20260904-081",
+      "date": "2026-09-04",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260904090430_131_169.jpg",
+      "sha256": "a23ac25e813f529f8b2536230fe35229b82ff15afd0b97b93b0a484044c962b4",
+      "width": 1279,
+      "height": 3810,
+      "segments": [
+        {
+          "fileName": "morning-20260904-081-01.jpg",
+          "width": 1279,
+          "height": 3810
+        }
+      ]
+    },
+    {
+      "id": "mission-20260905-061",
+      "date": "2026-09-05",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260905095521_135_169.jpg",
+      "sha256": "7e2cc9cf3a77645bc0b17fce9c528c5d78e8aa8a485991c45cf27050150f2181",
+      "width": 888,
+      "height": 11186,
+      "segments": [
+        {
+          "fileName": "mission-20260905-061-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260905-061-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260905-061-03.jpg",
+          "width": 888,
+          "height": 2994
+        }
+      ]
+    },
+    {
+      "id": "morning-20260905-082",
+      "date": "2026-09-05",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260905095450_134_169.jpg",
+      "sha256": "381f8386eb4dab0c188c3e17f262a5564d5215f89e5f92d65779d35734a3e254",
+      "width": 1279,
+      "height": 3495,
+      "segments": [
+        {
+          "fileName": "morning-20260905-082-01.jpg",
+          "width": 1279,
+          "height": 3495
+        }
+      ]
+    },
+    {
+      "id": "morning-20260906-083",
+      "date": "2026-09-06",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260906085858_139_169.jpg",
+      "sha256": "17503ddb46a02b8f3f2dfa768f9dcf65ac8d7172a32f709f9141691fd2008450",
+      "width": 1279,
+      "height": 3883,
+      "segments": [
+        {
+          "fileName": "morning-20260906-083-01.jpg",
+          "width": 1279,
+          "height": 3883
+        }
+      ]
+    },
+    {
+      "id": "morning-20260907-084",
+      "date": "2026-09-07",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260907085933_142_169.jpg",
+      "sha256": "fa69046dae819f464b25834c5b0d1fd5a05ff9a60ff52171ecad53f08455ddb6",
+      "width": 1279,
+      "height": 3651,
+      "segments": [
+        {
+          "fileName": "morning-20260907-084-01.jpg",
+          "width": 1279,
+          "height": 3651
+        }
+      ]
+    },
+    {
+      "id": "mission-20260908-062",
+      "date": "2026-09-08",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260908090211_144_169.jpg",
+      "sha256": "11ecac883f4d49f3b37dc2785aa08ea79334038bd164cbd2f432267fd6c3de90",
+      "width": 888,
+      "height": 11450,
+      "segments": [
+        {
+          "fileName": "mission-20260908-062-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260908-062-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260908-062-03.jpg",
+          "width": 888,
+          "height": 3258
+        }
+      ]
+    },
+    {
+      "id": "morning-20260908-085",
+      "date": "2026-09-08",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260908090146_143_169.jpg",
+      "sha256": "151a603d8a590a63c98dc2ded936708107dea8a7119d72ebd43b726b2fc3de9d",
+      "width": 854,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260908-085-01.jpg",
+          "width": 854,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260909-063",
+      "date": "2026-09-09",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260909090205_147_169.jpg",
+      "sha256": "463c4085df72a674d4452bb05723a2b282cb7f2ae523ae1d63449666ef4cb72b",
+      "width": 888,
+      "height": 12730,
+      "segments": [
+        {
+          "fileName": "mission-20260909-063-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260909-063-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260909-063-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260909-063-04.jpg",
+          "width": 888,
+          "height": 442
+        }
+      ]
+    },
+    {
+      "id": "morning-20260909-086",
+      "date": "2026-09-09",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260909090147_146_169.jpg",
+      "sha256": "608fe520344a681acaf70535dbaa67a3e29ff1a5fb2750b82faa06727f1b7bd5",
+      "width": 978,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260909-086-01.jpg",
+          "width": 978,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260910-064",
+      "date": "2026-09-10",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260910090104_150_169.jpg",
+      "sha256": "6edc1fcdd6f737e6f43008f7e9c020cf723c6308998255192f823031acde94b3",
+      "width": 888,
+      "height": 9325,
+      "segments": [
+        {
+          "fileName": "mission-20260910-064-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260910-064-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260910-064-03.jpg",
+          "width": 888,
+          "height": 1133
+        }
+      ]
+    },
+    {
+      "id": "morning-20260910-087",
+      "date": "2026-09-10",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260910090052_149_169.jpg",
+      "sha256": "a8b72426b463b41d2b47e8e41f7a5ac2a0596cbc0ef0be2d91f6f78d59f5d86f",
+      "width": 1032,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260910-087-01.jpg",
+          "width": 1032,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260911-065",
+      "date": "2026-09-11",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260911090121_153_169.jpg",
+      "sha256": "ce469de4388768ea2d37d6e48f032f2aee28a537c6d6682b3b059afb5ccc2a7e",
+      "width": 888,
+      "height": 9964,
+      "segments": [
+        {
+          "fileName": "mission-20260911-065-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260911-065-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260911-065-03.jpg",
+          "width": 888,
+          "height": 1772
+        }
+      ]
+    },
+    {
+      "id": "morning-20260911-088",
+      "date": "2026-09-11",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260911090114_152_169.jpg",
+      "sha256": "02787009090e7a308fc0ad5234d7715d3206f3003b12411d0aecffa388b5b000",
+      "width": 1146,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260911-088-01.jpg",
+          "width": 1146,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260912-066",
+      "date": "2026-09-12",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260912090616_156_169.jpg",
+      "sha256": "53f0cf6b5f6af7cd76db54ad773a61274fd3550ea3f79e3ea9fc24f1d746474e",
+      "width": 888,
+      "height": 12570,
+      "segments": [
+        {
+          "fileName": "mission-20260912-066-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260912-066-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260912-066-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260912-066-04.jpg",
+          "width": 888,
+          "height": 282
+        }
+      ]
+    },
+    {
+      "id": "morning-20260912-089",
+      "date": "2026-09-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260912090601_155_169.jpg",
+      "sha256": "db40bba79bf147952a6a48830b1d1f16df8df87b178f772a9bd84de2dc13b0c5",
+      "width": 1216,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260912-089-01.jpg",
+          "width": 1216,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20260913-090",
+      "date": "2026-09-13",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260913090008_158_169.jpg",
+      "sha256": "35a6625cb9886eaa6bcafa8fb315c9191c8471ff3d72e0f38d2327b775bce1a5",
+      "width": 1140,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260913-090-01.jpg",
+          "width": 1140,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260914-091",
+      "date": "2026-09-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260914085630_162_169.jpg",
+      "sha256": "9def834713bdcea1712a863de0bfb7a74ee36ec5d625c3eefd288fb16e1f20bf",
+      "width": 1279,
+      "height": 3860,
+      "segments": [
+        {
+          "fileName": "morning-20260914-091-01.jpg",
+          "width": 1279,
+          "height": 3860
+        }
+      ]
+    },
+    {
+      "id": "mission-20260915-067",
+      "date": "2026-09-15",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260915090354_167_169.jpg",
+      "sha256": "12606f06d396293b95352d375a356f55784237a53e7a7890cb5e7b58bfd673b7",
+      "width": 888,
+      "height": 11335,
+      "segments": [
+        {
+          "fileName": "mission-20260915-067-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260915-067-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260915-067-03.jpg",
+          "width": 888,
+          "height": 3143
+        }
+      ]
+    },
+    {
+      "id": "morning-20260915-092",
+      "date": "2026-09-15",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260915090338_166_169.jpg",
+      "sha256": "4caf562443d0e5d839ddd8f404e4ba09e8894f91fd6114092aa60824d45e4556",
+      "width": 982,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260915-092-01.jpg",
+          "width": 982,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260916-068",
+      "date": "2026-09-16",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260916090712_172_169.jpg",
+      "sha256": "69351812e410e9bc7dfa97dde703b036adc26f6ed311cfc0866aceca2f8fd047",
+      "width": 888,
+      "height": 12949,
+      "segments": [
+        {
+          "fileName": "mission-20260916-068-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260916-068-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260916-068-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260916-068-04.jpg",
+          "width": 888,
+          "height": 661
+        }
+      ]
+    },
+    {
+      "id": "morning-20260916-093",
+      "date": "2026-09-16",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260916090648_171_169.jpg",
+      "sha256": "cfa4d59a4a0044a6848af35490e6ae25ff27e0602c034f014a4dbf60d8de134f",
+      "width": 1279,
+      "height": 3843,
+      "segments": [
+        {
+          "fileName": "morning-20260916-093-01.jpg",
+          "width": 1279,
+          "height": 3843
+        }
+      ]
+    },
+    {
+      "id": "mission-20260917-069",
+      "date": "2026-09-17",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260917090514_175_169.jpg",
+      "sha256": "12660c28c3a4bca1e1a4ab81c9f987c0f1c290038cf10236366d959d04efc296",
+      "width": 888,
+      "height": 10982,
+      "segments": [
+        {
+          "fileName": "mission-20260917-069-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260917-069-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260917-069-03.jpg",
+          "width": 888,
+          "height": 2790
+        }
+      ]
+    },
+    {
+      "id": "morning-20260917-094",
+      "date": "2026-09-17",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260917090456_174_169.jpg",
+      "sha256": "88f5e34f1abdaac7a456d0e1c7aa862f0dcb016794ea350df860c1c6edff2120",
+      "width": 1279,
+      "height": 3900,
+      "segments": [
+        {
+          "fileName": "morning-20260917-094-01.jpg",
+          "width": 1279,
+          "height": 3900
+        }
+      ]
+    },
+    {
+      "id": "mission-20260918-070",
+      "date": "2026-09-18",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260918090005_180_169.jpg",
+      "sha256": "0cca653868dbc9cfeb3825d6aecbff43c5e20a9c64270393db3bd23755bb7e22",
+      "width": 888,
+      "height": 11108,
+      "segments": [
+        {
+          "fileName": "mission-20260918-070-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260918-070-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260918-070-03.jpg",
+          "width": 888,
+          "height": 2916
+        }
+      ]
+    },
+    {
+      "id": "morning-20260918-095",
+      "date": "2026-09-18",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260918085942_179_169.jpg",
+      "sha256": "24ded65533cbcd33dcec91a97247ea51832b01a5e4313541a3997fdfa985a7d9",
+      "width": 966,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260918-095-01.jpg",
+          "width": 966,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260919-071",
+      "date": "2026-09-19",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260919090039_185_169.jpg",
+      "sha256": "935df57130efd2f11fa721b5dad9cd099b41b17de2e39edb4f6613c442e74ad2",
+      "width": 888,
+      "height": 6600,
+      "segments": [
+        {
+          "fileName": "mission-20260919-071-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260919-071-02.jpg",
+          "width": 888,
+          "height": 2504
+        }
+      ]
+    },
+    {
+      "id": "morning-20260919-096",
+      "date": "2026-09-19",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260919090022_184_169.jpg",
+      "sha256": "765180f7e75b41cb35a842870cec501f70bd70e5c199b842b41cd31a43a4f0bc",
+      "width": 1080,
+      "height": 5760,
+      "segments": [
+        {
+          "fileName": "morning-20260919-096-01.jpg",
+          "width": 1080,
+          "height": 4096
+        },
+        {
+          "fileName": "morning-20260919-096-02.jpg",
+          "width": 1080,
+          "height": 1664
+        }
+      ]
+    },
+    {
+      "id": "morning-20260920-097",
+      "date": "2026-09-20",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260920090041_189_169.jpg",
+      "sha256": "1ae2ffc12558f18e594794594ddc3df6c33341d46616da9867196bc0603807a5",
+      "width": 886,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260920-097-01.jpg",
+          "width": 886,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260921-098",
+      "date": "2026-09-21",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260921085917_191_169.jpg",
+      "sha256": "4623e8d217c9a93b99d5c2e515d9827b5de0cdaaae1f2471a782851c6ed1064c",
+      "width": 1184,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260921-098-01.jpg",
+          "width": 1184,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260922-072",
+      "date": "2026-09-22",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260922090105_196_169.jpg",
+      "sha256": "1da68a9321ee8cff64977dc39fb1b0e429e5c91e2e9ab015a0c9f6ea2f7603ce",
+      "width": 888,
+      "height": 11722,
+      "segments": [
+        {
+          "fileName": "mission-20260922-072-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260922-072-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260922-072-03.jpg",
+          "width": 888,
+          "height": 3530
+        }
+      ]
+    },
+    {
+      "id": "morning-20260922-099",
+      "date": "2026-09-22",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260922090032_195_169.jpg",
+      "sha256": "7f0e5da8611989bb06b700a6f2e6841a7b4ad254a865ef6fefe3e5b1c7519fde",
+      "width": 896,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260922-099-01.jpg",
+          "width": 896,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260923-073",
+      "date": "2026-09-23",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260923090039_199_169.jpg",
+      "sha256": "6f5cf21eaec591461bc84e063aed3255038062a0e15fd0b59e83c1d3e957d706",
+      "width": 888,
+      "height": 13255,
+      "segments": [
+        {
+          "fileName": "mission-20260923-073-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260923-073-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260923-073-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260923-073-04.jpg",
+          "width": 888,
+          "height": 967
+        }
+      ]
+    },
+    {
+      "id": "morning-20260923-100",
+      "date": "2026-09-23",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260923090012_198_169.jpg",
+      "sha256": "f38e78c58e447921aee0cdecdb745127fdc526c7c5a1c2377487ec5d91d9d01d",
+      "width": 924,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260923-100-01.jpg",
+          "width": 924,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260924-074",
+      "date": "2026-09-24",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260924090031_202_169.jpg",
+      "sha256": "5cfbee996c51fdc0f4c8e568f1a93fabadb7e981d5da4d1f665fb4daef6727dd",
+      "width": 888,
+      "height": 10839,
+      "segments": [
+        {
+          "fileName": "mission-20260924-074-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260924-074-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260924-074-03.jpg",
+          "width": 888,
+          "height": 2647
+        }
+      ]
+    },
+    {
+      "id": "morning-20260924-101",
+      "date": "2026-09-24",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260924085947_201_169.jpg",
+      "sha256": "8b9b6ffa3a1025414ce6777995f72075d7597e8a2d5d9649f678845b9a29af6d",
+      "width": 1096,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20260924-101-01.jpg",
+          "width": 1096,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20260925-075",
+      "date": "2026-09-25",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260925090039_207_169.jpg",
+      "sha256": "bcd8779fc21996cea521f36164f492d9101b8f3359f46d8304523e8fe74aa548",
+      "width": 888,
+      "height": 11087,
+      "segments": [
+        {
+          "fileName": "mission-20260925-075-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260925-075-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260925-075-03.jpg",
+          "width": 888,
+          "height": 2895
+        }
+      ]
+    },
+    {
+      "id": "morning-20260925-102",
+      "date": "2026-09-25",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260925085957_206_169.jpg",
+      "sha256": "806a4bb2fc7b6f66c637cbe7bec248cb3e3e0b098003ccaa76f433844072dd6b",
+      "width": 984,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260925-102-01.jpg",
+          "width": 984,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20260926-103",
+      "date": "2026-09-26",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260926085929_211_169.jpg",
+      "sha256": "4bccf05b7780c36d713029d6db318693a42e1eaead15fde67b978f05538bf521",
+      "width": 912,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260926-103-01.jpg",
+          "width": 912,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20260929-076",
+      "date": "2026-09-29",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260929090112_223_169.jpg",
+      "sha256": "5590ce1ea426643ac2345efba0e6851b93f0dbb218e558ea0996cd65301a3526",
+      "width": 888,
+      "height": 12179,
+      "segments": [
+        {
+          "fileName": "mission-20260929-076-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260929-076-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260929-076-03.jpg",
+          "width": 888,
+          "height": 3987
+        }
+      ]
+    },
+    {
+      "id": "mission-20260930-077",
+      "date": "2026-09-30",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20260930090000_226_169.jpg",
+      "sha256": "2e038ab1e9318e66b1cabefbe1e2713be52484d4a711191fe0692d5678280284",
+      "width": 888,
+      "height": 10334,
+      "segments": [
+        {
+          "fileName": "mission-20260930-077-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260930-077-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20260930-077-03.jpg",
+          "width": 888,
+          "height": 2142
+        }
+      ]
+    },
+    {
+      "id": "morning-20260930-104",
+      "date": "2026-09-30",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20260930085926_225_169.jpg",
+      "sha256": "00ae8a102d5112fd0fe56447580ce1889a0bc2a92cf05b3a8323eaccffcbd980",
+      "width": 810,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20260930-104-01.jpg",
+          "width": 810,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261001-078",
+      "date": "2026-10-01",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261001090000_231_169.jpg",
+      "sha256": "edf670ff91bbae0ac1b8e1bfae21b69a4aab2f626ed194d3579e65077ba4e33f",
+      "width": 888,
+      "height": 10684,
+      "segments": [
+        {
+          "fileName": "mission-20261001-078-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261001-078-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261001-078-03.jpg",
+          "width": 888,
+          "height": 2492
+        }
+      ]
+    },
+    {
+      "id": "morning-20261001-105",
+      "date": "2026-10-01",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261001085935_230_169.jpg",
+      "sha256": "2616e225ed7799079f8ace3da909f07d26c89109f1d5d59be1b8ec0d3fac75f3",
+      "width": 914,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261001-105-01.jpg",
+          "width": 914,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261002-079",
+      "date": "2026-10-02",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261002090006_236_169.jpg",
+      "sha256": "552fc31426da05615099c4f66ab759dc9673febbd9c264a52cca952532a7c691",
+      "width": 888,
+      "height": 11562,
+      "segments": [
+        {
+          "fileName": "mission-20261002-079-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261002-079-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261002-079-03.jpg",
+          "width": 888,
+          "height": 3370
+        }
+      ]
+    },
+    {
+      "id": "morning-20261002-106",
+      "date": "2026-10-02",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261002085937_235_169.jpg",
+      "sha256": "26a7a492946dfa37f360af74d9d5198c5a85d15d63e23a849623579fd4a54d09",
+      "width": 1182,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261002-106-01.jpg",
+          "width": 1182,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261003-080",
+      "date": "2026-10-03",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261003090048_242_169.jpg",
+      "sha256": "0631b00633137d568b4233c4a64225f25769c0c147254dd53fb72ed5a06c33de",
+      "width": 888,
+      "height": 12703,
+      "segments": [
+        {
+          "fileName": "mission-20261003-080-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261003-080-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261003-080-03.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261003-080-04.jpg",
+          "width": 888,
+          "height": 415
+        }
+      ]
+    },
+    {
+      "id": "morning-20261003-107",
+      "date": "2026-10-03",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261003090007_241_169.jpg",
+      "sha256": "a836c3f23f37d9bbba1359b5c9adf20c055f143a608c9e401951c32ff63805a7",
+      "width": 984,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261003-107-01.jpg",
+          "width": 984,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20261004-108",
+      "date": "2026-10-04",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261004090049_246_169(1).jpg",
+      "sha256": "0358d836ad01c15fd72b7ecd484b0a7b5e56af72d4aa31b27352bbfab31fc782",
+      "width": 1279,
+      "height": 3788,
+      "segments": [
+        {
+          "fileName": "morning-20261004-108-01.jpg",
+          "width": 1279,
+          "height": 3788
+        }
+      ]
+    },
+    {
+      "id": "morning-20261005-109",
+      "date": "2026-10-05",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261005085841_248_169.jpg",
+      "sha256": "30d6926afaf4bdb4e6305d61aefbfed275b3f2f34068546ff5526126da68248a",
+      "width": 810,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261005-109-01.jpg",
+          "width": 810,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261006-081",
+      "date": "2026-10-06",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261006085836_263_169.jpg",
+      "sha256": "67e38bb701925beed7f924d07d9ee1eb8971a66fdc1bb551ee4c0f435a083219",
+      "width": 888,
+      "height": 10704,
+      "segments": [
+        {
+          "fileName": "mission-20261006-081-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261006-081-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261006-081-03.jpg",
+          "width": 888,
+          "height": 2512
+        }
+      ]
+    },
+    {
+      "id": "morning-20261006-110",
+      "date": "2026-10-06",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261006085820_262_169.jpg",
+      "sha256": "1032cdc3b29a5282faf31bcb3471894dca8e9e2cd74e2b32a6ea0d2921b3a2a7",
+      "width": 1274,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261006-110-01.jpg",
+          "width": 1274,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261007-082",
+      "date": "2026-10-07",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261007090009_251_169.jpg",
+      "sha256": "aae72be869843ae8e6338519044d67a0771f17bed8fa76c51ef8fe495adf4f68",
+      "width": 888,
+      "height": 10252,
+      "segments": [
+        {
+          "fileName": "mission-20261007-082-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261007-082-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261007-082-03.jpg",
+          "width": 888,
+          "height": 2060
+        }
+      ]
+    },
+    {
+      "id": "morning-20261007-111",
+      "date": "2026-10-07",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261007085954_250_169.jpg",
+      "sha256": "b4f2eb6a6c442553d910f35e8938a98e2969248cbd41196bd404a39e4ffd71b1",
+      "width": 946,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20261007-111-01.jpg",
+          "width": 946,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20261008-083",
+      "date": "2026-10-08",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261008090213_256_169.jpg",
+      "sha256": "5c550df122a2e3106d010478652114ab3334c9f438bbc2a1c418d7bb7961b99c",
+      "width": 888,
+      "height": 10564,
+      "segments": [
+        {
+          "fileName": "mission-20261008-083-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261008-083-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261008-083-03.jpg",
+          "width": 888,
+          "height": 2372
+        }
+      ]
+    },
+    {
+      "id": "morning-20261008-112",
+      "date": "2026-10-08",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261008090150_255_169.jpg",
+      "sha256": "458e728f9725552109841ae69e99c80b52265f068cc1c2cac38c17e8aafc3036",
+      "width": 900,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261008-112-01.jpg",
+          "width": 900,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261009-084",
+      "date": "2026-10-09",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261009085941_268_169.jpg",
+      "sha256": "fa40acc472b229a25348549fe15d542ea2b4360bc8c1ed2f79df59f63eccc435",
+      "width": 888,
+      "height": 9075,
+      "segments": [
+        {
+          "fileName": "mission-20261009-084-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261009-084-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261009-084-03.jpg",
+          "width": 888,
+          "height": 883
+        }
+      ]
+    },
+    {
+      "id": "morning-20261009-113",
+      "date": "2026-10-09",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261009085924_267_169.jpg",
+      "sha256": "6c2c022f14af86d096e85a97df0ae817b1961a5809142cc3b52f1bb66f741d21",
+      "width": 1264,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261009-113-01.jpg",
+          "width": 1264,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261010-085",
+      "date": "2026-10-10",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261010090024_273_169.jpg",
+      "sha256": "164ab1ad0f4bc125ee91be04668a0290098e8bed9b87ed73bd343e8a6494adea",
+      "width": 888,
+      "height": 10119,
+      "segments": [
+        {
+          "fileName": "mission-20261010-085-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261010-085-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261010-085-03.jpg",
+          "width": 888,
+          "height": 1927
+        }
+      ]
+    },
+    {
+      "id": "morning-20261010-114",
+      "date": "2026-10-10",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261010090001_272_169.jpg",
+      "sha256": "c543788de1cc5d3d38bd0d7f6f55d53d919c9bbad810b54a13f04f6b617b3e67",
+      "width": 722,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20261010-114-01.jpg",
+          "width": 722,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "morning-20261012-115",
+      "date": "2026-10-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261012090520_277_169.jpg",
+      "sha256": "4ae7c8f845bc036d5e56865fc0e5c5cb4aadf54618ed507c52b0bf648d02e0fc",
+      "width": 1182,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261012-115-01.jpg",
+          "width": 1182,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "morning-20261012-116",
+      "date": "2026-10-12",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261012185818_279_169.jpg",
+      "sha256": "e5f7a75bb85547663ec8f09e7ee06b31d17ac1e16db9ca07c79b61a72a012bc6",
+      "width": 934,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261012-116-01.jpg",
+          "width": 934,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261013-086",
+      "date": "2026-10-13",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261013085911_281_169.jpg",
+      "sha256": "c9911df358a7f29d04e38322b5b24221a5f35462c73948ba07a0294b2a86e449",
+      "width": 888,
+      "height": 11777,
+      "segments": [
+        {
+          "fileName": "mission-20261013-086-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261013-086-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261013-086-03.jpg",
+          "width": 888,
+          "height": 3585
+        }
+      ]
+    },
+    {
+      "id": "morning-20261013-117",
+      "date": "2026-10-13",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261013085852_280_169.jpg",
+      "sha256": "c16893b270c1814e6b413574283087bdf3497fd0793796b630ea2959db974ea2",
+      "width": 954,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20261013-117-01.jpg",
+          "width": 954,
+          "height": 4094
+        }
+      ]
+    },
+    {
+      "id": "mission-20261014-087",
+      "date": "2026-10-14",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261014090233_286_169.jpg",
+      "sha256": "7498199f9c73628a1199de2b3e2df92c422d3947d43d90e81f65f0f77ac1fb5c",
+      "width": 888,
+      "height": 9347,
+      "segments": [
+        {
+          "fileName": "mission-20261014-087-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261014-087-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261014-087-03.jpg",
+          "width": 888,
+          "height": 1155
+        }
+      ]
+    },
+    {
+      "id": "morning-20261014-118",
+      "date": "2026-10-14",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261014090218_285_169.jpg",
+      "sha256": "18c2ae9dc0e52a6c3ef09762ade48c356c64050675584dd71cb3302e4cf99e0f",
+      "width": 1170,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261014-118-01.jpg",
+          "width": 1170,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261015-088",
+      "date": "2026-10-15",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261015091340_291_169.jpg",
+      "sha256": "4c2527c894eb22a5d19e6f63b95d08e5b82aa494609c3863ef2ffb25b2c0b670",
+      "width": 888,
+      "height": 9634,
+      "segments": [
+        {
+          "fileName": "mission-20261015-088-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261015-088-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261015-088-03.jpg",
+          "width": 888,
+          "height": 1442
+        }
+      ]
+    },
+    {
+      "id": "morning-20261015-119",
+      "date": "2026-10-15",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261015091324_290_169.jpg",
+      "sha256": "b6484e52fbf9cc72b95d0690d9d5f87acaf7b5628e31cdb1f00e9696483fe99d",
+      "width": 944,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261015-119-01.jpg",
+          "width": 944,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261016-089",
+      "date": "2026-10-16",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261016090408_298_169.jpg",
+      "sha256": "0602b14baf29133a493274c16360af25afd55b801da83e7f6d2e76dc25e89eea",
+      "width": 888,
+      "height": 10702,
+      "segments": [
+        {
+          "fileName": "mission-20261016-089-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261016-089-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261016-089-03.jpg",
+          "width": 888,
+          "height": 2510
+        }
+      ]
+    },
+    {
+      "id": "morning-20261016-120",
+      "date": "2026-10-16",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261016090349_297_169.jpg",
+      "sha256": "3cd10aace8bfc210701ccffbf61ea461949bcf7602d6777c1e054cd782d7f645",
+      "width": 912,
+      "height": 4096,
+      "segments": [
+        {
+          "fileName": "morning-20261016-120-01.jpg",
+          "width": 912,
+          "height": 4096
+        }
+      ]
+    },
+    {
+      "id": "mission-20261017-090",
+      "date": "2026-10-17",
+      "channel": "宣教动态与见证",
+      "label": "宣教动态与见证",
+      "sourceFile": "Weixin Image_20261017090457_301_169.jpg",
+      "sha256": "c246770c5a51563529c0cdb908b930f144c37718693026fe8a18ce8d3d1db545",
+      "width": 888,
+      "height": 9156,
+      "segments": [
+        {
+          "fileName": "mission-20261017-090-01.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261017-090-02.jpg",
+          "width": 888,
+          "height": 4096
+        },
+        {
+          "fileName": "mission-20261017-090-03.jpg",
+          "width": 888,
+          "height": 964
+        }
+      ]
+    },
+    {
+      "id": "morning-20261017-121",
+      "date": "2026-10-17",
+      "channel": "晨修",
+      "label": "晨修",
+      "sourceFile": "Weixin Image_20261017090437_300_169.jpg",
+      "sha256": "5665bf5bef32473219870ec75ebed3a6a0268c4e0f64ef19197bf74e6c250419",
+      "width": 1216,
+      "height": 4094,
+      "segments": [
+        {
+          "fileName": "morning-20261017-121-01.jpg",
+          "width": 1216,
+          "height": 4094
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "sourceFile": "Weixin Image_20260804090306_9_169.jpg",
+      "sha256": "6dbdcea7e21473c1d5f9aeb7c3b63289094733330aa94687f71e71c1d6ca2102",
+      "reason": "duplicate"
+    },
+    {
+      "sourceFile": "Weixin Image_20260807085902_24_169.jpg",
+      "sha256": "46f9f1751ee37c539aa915950642b594ed5850850db485e50ba63ef87a05bd15",
+      "reason": "duplicate"
+    },
+    {
+      "sourceFile": "Weixin Image_20260925090524_210_169.jpg",
+      "sha256": "064f7e7002c16fa3d4f06ba392e69a9d76345a629470372c53557261a1060a47",
+      "reason": "known-exclusion",
+      "width": 1290,
+      "height": 1935
+    },
+    {
+      "sourceFile": "Weixin Image_20261004090049_246_169.jpg",
+      "sha256": "0358d836ad01c15fd72b7ecd484b0a7b5e56af72d4aa31b27352bbfab31fc782",
+      "reason": "duplicate"
+    }
+  ]
+}

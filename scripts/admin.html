@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f37">
+  <meta name="robots" content="noindex,nofollow">
+  <title>同工管理 · 祷告地球</title>
+  <style>
+    :root { color-scheme:light; --ink:#173f37; --soft:#526963; --cream:#f7f5f0; --line:#dce6e0; --mint:#e6f1eb; --white:#fff; --red:#9f352c; --red-soft:#fff0ed; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--cream); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; line-height:1.55; -webkit-text-size-adjust:100%; }
+    [hidden] { display:none!important; }
+    button,input,select,textarea { font:inherit; }
+    button,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
+    a { color:var(--ink); text-underline-offset:3px; }
+    button { cursor:pointer; }
+    button:disabled { opacity:.5; cursor:wait; }
+    :focus-visible { outline:3px solid #abceb9; outline-offset:3px; }
+    .shell { max-width:940px; margin:0 auto; padding:18px 16px max(36px,env(safe-area-inset-bottom)); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:4px 0 18px; }
+    .brand { font-size:21px; font-weight:800; letter-spacing:.03em; }
+    .sub,.muted { color:var(--soft); font-size:13px; }
+    .sub { margin-top:2px; }
+    .top-actions { display:flex; align-items:center; gap:10px; font-size:13px; }
+    h1 { font-size:23px; line-height:1.3; margin:0 0 8px; }
+    h2 { font-size:18px; margin:0 0 7px; }
+    h3 { font-size:16px; margin:0; }
+    p { margin:5px 0 14px; }
+    .panel { padding:20px; background:var(--white); border:1px solid var(--line); border-radius:19px; margin:0 0 16px; }
+    .auth { max-width:430px; margin:32px auto; }
+    .auth .intro { margin-bottom:23px; }
+    .mark { display:flex; align-items:center; justify-content:center; width:48px; height:48px; margin-bottom:17px; border-radius:16px; background:var(--mint); font-size:24px; }
+    label,.field-label { display:block; font-size:14px; font-weight:650; margin:16px 0 6px; }
+    input:not([type=file]),select,textarea { width:100%; min-height:46px; border:1px solid #c6d6cc; border-radius:10px; padding:10px 12px; background:#fff; color:var(--ink); font-size:16px; }
+    input[type=search] { appearance:none; }
+    textarea { min-height:92px; resize:vertical; }
+    input[type=file] { width:100%; font-size:14px; }
+    input[type=file]::file-selector-button { border:1px solid #bbd0c1; border-radius:9px; padding:9px 12px; background:var(--mint); color:var(--ink); margin-right:10px; }
+    .help { margin:6px 0 0; font-size:12px; color:var(--soft); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; min-height:43px; padding:9px 16px; border:1px solid var(--ink); border-radius:11px; background:var(--ink); color:#fff; text-decoration:none; font-weight:650; font-size:14px; gap:6px; }
+    .btn.secondary { background:#fff; color:var(--ink); border-color:#cadacf; }
+    .btn.quiet { background:var(--mint); color:var(--ink); border-color:var(--mint); }
+    .btn.danger { background:#fff; color:var(--red); border-color:#e8c7c0; }
+    .btn.small { min-height:36px; padding:6px 11px; font-size:12px; border-radius:9px; }
+    .wide { width:100%; }
+    .text-btn { border:0; background:transparent; color:var(--ink); text-decoration:underline; padding:5px 0; font-size:13px; }
+    .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .between { justify-content:space-between; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:22px; }
+    .actions .btn { flex:1; }
+    .notice { padding:12px 14px; background:var(--mint); border:1px solid #d5e5d9; border-radius:11px; margin:14px 0; font-size:13px; }
+    .notice.error { background:var(--red-soft); color:var(--red); border-color:#eccdc5; }
+    .notice.success { background:var(--mint); }
+    .message { position:sticky; top:8px; z-index:5; box-shadow:0 5px 18px #173f3712; white-space:pre-line; }
+    .tabs { display:flex; gap:7px; margin:0 0 21px; padding-bottom:5px; overflow-x:auto; }
+    .tab { flex-shrink:0; min-height:42px; padding:9px 16px; border:1px solid var(--line); border-radius:22px; color:var(--ink); background:#fff; font-size:14px; font-weight:650; }
+    .tab[aria-selected=true] { color:#fff; background:var(--ink); border-color:var(--ink); }
+    .grid { display:grid; gap:0 16px; grid-template-columns:1fr 1fr; }
+    .filters { display:grid; grid-template-columns:1fr 1fr 1.5fr; gap:10px; margin-top:18px; }
+    .filters label { margin:0 0 5px; font-size:12px; }
+    .filters input,.filters select { font-size:14px; }
+    .list { display:grid; gap:10px; }
+    .content-card { border:1px solid var(--line); border-radius:14px; background:#fff; padding:15px; }
+    .content-card .card-top { display:flex; align-items:flex-start; gap:12px; }
+    .content-card .thumb { width:57px; height:70px; border-radius:7px; background:var(--mint); object-fit:cover; object-position:top; flex-shrink:0; }
+    .card-copy { flex:1; min-width:0; }
+    .card-title { overflow-wrap:anywhere; margin:3px 0 4px; line-height:1.45; }
+    .card-excerpt { color:var(--soft); font-size:13px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin:7px 0; }
+    .card-actions { display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; }
+    .badge { display:inline-block; font-size:11px; border-radius:7px; padding:2px 7px; background:#e9f1eb; color:#326048; vertical-align:middle; }
+    .badge.draft { background:#fff4da; color:#856417; }
+    .badge.archived { background:#eef0ee; color:#64736c; }
+    .badge.disabled { background:var(--red-soft); color:var(--red); }
+    .empty { text-align:center; padding:34px 18px; color:var(--soft); font-size:14px; }
+    .image-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-top:14px; }
+    .image-card { border:1px solid var(--line); border-radius:11px; padding:7px; background:#fff; min-width:0; }
+    .image-card img { display:block; width:100%; height:130px; border-radius:6px; object-fit:contain; object-position:top; background:#f1f3ed; }
+    .image-name { font-size:11px; color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:5px 0; }
+    .image-controls { display:flex; justify-content:space-between; gap:4px; }
+    .image-controls button { border:1px solid var(--line); border-radius:6px; background:#fff; padding:5px 7px; min-width:30px; min-height:33px; color:var(--ink); font-size:13px; }
+    .image-controls .remove { color:var(--red); }
+    .image-index { font-size:11px; margin:5px 0 0; }
+    .existing img { height:115px; }
+    .divider { height:1px; background:var(--line); margin:23px 0; }
+    .progress { width:100%; height:8px; accent-color:var(--ink); margin-top:12px; }
+    .user-card { border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:10px; }
+    .user-card .btn { margin-top:10px; }
+    .mono { font-family:ui-monospace,Consolas,monospace; }
+    .small-form { background:#f7faf6; border:1px solid var(--line); border-radius:11px; padding:13px; margin-top:11px; }
+    footer { text-align:center; font-size:12px; color:var(--soft); padding:13px 0; }
+    @media (max-width:560px) {
+      .shell { padding:14px 12px max(28px,env(safe-area-inset-bottom)); }
+      .panel { padding:17px 15px; border-radius:15px; }
+      .auth { margin-top:20px; }
+      .brand { font-size:19px; }
+      .top-actions { gap:9px; }
+      .grid { grid-template-columns:1fr; }
+      .filters { grid-template-columns:1fr 1fr; }
+      .filters .search { grid-column:1/-1; }
+      .image-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+      .image-card img { height:140px; }
+      .image-controls button { min-width:33px; }
+      .actions { gap:8px; }
+      .actions .btn { padding:10px 12px; }
+    }
+    @media (prefers-reduced-motion:no-preference) { .btn,.tab { transition:background .12s; } }
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div><div class="brand">祷告地球</div><div class="sub">同工内容管理</div></div>
+    <div class="top-actions"><a href="/reader/index.html" target="_blank" rel="noopener">查看内容 ↗</a><button id="logout" class="text-btn" hidden>退出</button></div>
+  </header>
+  <div id="message" class="notice message" role="status" aria-live="polite" hidden></div>
+  <div id="boot" class="panel empty">正在确认登录状态…</div>
+  <section id="login-panel" class="panel auth" hidden aria-labelledby="login-title">
+    <div class="mark" aria-hidden="true">✦</div>
+    <h1 id="login-title">同工登录</h1>
+    <p class="muted intro">登录后可上传每日晨修、宣教动态与见证。请向管理员领取同工账号。</p>
+    <form id="login-form">
+      <label for="login-username">账号</label><input id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="64">
+      <label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      <div class="actions"><button class="btn wide" type="submit">登录管理入口</button></div>
+    </form>
+    <p class="help" style="margin-top:17px">请勿将账号和密码发到公开群。忘记密码时，请联系管理员重置。</p>
+  </section>
+  <section id="password-panel" class="panel auth" hidden aria-labelledby="password-title">
+    <h1 id="password-title">设置自己的密码</h1>
+    <p id="password-intro" class="muted">首次登录或管理员重置密码后，请先更换临时密码，再发布内容。</p>
+    <form id="password-form">
+      <label for="current-password">当前密码</label><input id="current-password" type="password" autocomplete="current-password" required>
+      <label for="new-password">新密码</label><input id="new-password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+      <p class="help">至少 12 个字符，建议使用多个词语或字母、数字组合。</p>
+      <label for="confirm-password">再次输入新密码</label><input id="confirm-password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+      <div class="actions"><button class="btn" type="submit">保存新密码</button><button id="password-back" class="btn secondary" type="button" hidden>返回</button></div>
+    </form>
+  </section>
+  <section id="app" hidden>
+    <div class="row between" style="margin:0 2px 15px"><div class="muted" id="identity"></div><button id="change-password" class="text-btn">修改密码</button></div>
+    <nav class="tabs" aria-label="管理功能" role="tablist">
+      <button id="tab-compose" class="tab" role="tab" aria-selected="true" aria-controls="view-compose" data-view="compose">发布内容</button>
+      <button id="tab-library" class="tab" role="tab" aria-selected="false" aria-controls="view-library" data-view="library">内容管理</button>
+      <button id="tab-users" class="tab" role="tab" aria-selected="false" aria-controls="view-users" data-view="users" hidden>同工账号</button>
+    </nav>
+    <section id="view-compose" class="panel" role="tabpanel" aria-labelledby="tab-compose">
+      <div class="row between"><h1 id="editor-heading">发布每日内容</h1><button id="new-content" class="btn small secondary" type="button" hidden>取消编辑，新增内容</button></div>
+      <p class="muted" id="editor-description">选择栏目、日期和清晰原图，即可保存草稿或发布给大家阅读。</p>
+      <form id="content-form">
+        <div class="grid">
+          <div><label for="content-channel">栏目</label><select id="content-channel" required><option value="morning">晨修</option><option value="mission">宣教动态与见证</option></select></div>
+          <div><label for="content-date">内容日期</label><input id="content-date" type="date" required></div>
+        </div>
+        <label for="content-title">标题 <span class="muted">（选填）</span></label><input id="content-title" maxlength="200" placeholder="例如：马可福音查考 · 为东南亚宣教代祷">
+        <p class="help">不填写时，将使用栏目名称和日期作为标题。</p>
+        <label for="content-excerpt">简要说明 <span class="muted">（选填）</span></label><textarea id="content-excerpt" maxlength="2000" placeholder="可填写经文、代祷重点或这组图片的说明。"></textarea>
+        <div id="existing-images-wrap" hidden><div class="field-label">当前图片</div><div id="existing-images" class="image-grid existing"></div><p class="help">保留当前图片时，直接修改上方文字并保存。选择新图片后，将整组替换当前图片。</p></div>
+        <label for="content-images" id="images-label">上传清晰图片 <span class="muted">（可多选）</span></label>
+        <input id="content-images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+        <p class="help">请先在微信中打开并下载原图，再从相册选择。支持 JPG、PNG、WebP，每组最多 20 张、合计小于 60 MB、每张不超过 20 MB。内容不清晰的缩略图请勿上传。</p>
+        <div id="selected-images" class="image-grid"></div>
+        <p id="selected-summary" class="help" hidden></p>
+        <div id="upload-progress-wrap" hidden><progress id="upload-progress" class="progress" max="100" value="0"></progress><p id="upload-status" class="help" aria-live="polite">正在上传，请稍候…</p></div>
+        <div class="notice">草稿仅同工可见；发布后，主应用与轻量阅读版会显示内容。多张图片将按下方编号顺序展示，可用箭头调整。</div>
+        <div class="actions"><button id="save-draft" class="btn secondary" type="submit" value="draft">保存草稿</button><button id="publish-content" class="btn" type="submit" value="published">发布内容</button></div>
+      </form>
+    </section>
+    <section id="view-library" role="tabpanel" aria-labelledby="tab-library" hidden>
+      <div class="panel"><div class="row between"><div><h1>内容管理</h1><div id="content-count" class="muted">正在加载…</div></div><button id="refresh-content" class="btn small secondary" type="button">刷新</button></div>
+        <div class="filters">
+          <div><label for="filter-channel">栏目</label><select id="filter-channel"><option value="">全部栏目</option><option value="晨修">晨修</option><option value="宣教动态与见证">宣教动态与见证</option></select></div>
+          <div><label for="filter-status">状态</label><select id="filter-status"><option value="">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option><option value="archived">已归档</option></select></div>
+          <div class="search"><label for="filter-query">查找内容</label><input id="filter-query" type="search" placeholder="搜索标题、日期或说明"></div>
+        </div>
+      </div>
+      <div id="content-list" class="list"></div>
+      <div class="row" style="justify-content:center;margin-top:17px"><button id="load-more" class="btn secondary" hidden>显示更多</button></div>
+    </section>
+    <section id="view-users" role="tabpanel" aria-labelledby="tab-users" hidden>
+      <div class="panel"><h1>同工账号</h1><p class="muted">为每位同工建立独立账号。编辑同工可以发布和维护内容；管理员还可以授权和管理账号。</p>
+        <form id="create-user-form">
+          <div class="grid"><div><label for="new-username">同工账号</label><input id="new-username" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]{3,40}" title="3 至 40 位字母、数字、点、下划线或短横线" required placeholder="例如：zhangsan"><p class="help">3 至 40 位，使用字母、数字、点、下划线或短横线。</p></div><div><label for="new-role">权限</label><select id="new-role"><option value="editor">编辑同工 · 管理每日内容</option><option value="admin">管理员 · 内容与账号管理</option></select></div></div>
+          <label for="new-user-password">初始临时密码</label><input id="new-user-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+          <p class="help">至少 12 个字符。请单独告知该同工，首次登录后需更换。</p>
+          <div class="actions"><button class="btn" type="submit">创建并授权</button></div>
+        </form>
+      </div>
+      <div class="panel"><div class="row between"><h2>已授权同工</h2><button id="refresh-users" class="btn secondary small">刷新</button></div><div id="users-list"></div></div>
+    </section>
+  </section>
+  <noscript><div class="notice error">管理入口需要浏览器支持 JavaScript。请在手机浏览器中打开此页。</div></noscript>
+  <footer>祷告地球 · 每日晨修与全球宣教</footer>
+</main>
+<script>
+(function () {
+  'use strict';
+  var state = { user:null, csrf:'', items:[], users:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false };
+  var $ = function (id) { return document.getElementById(id); };
+  var labels = { draft:'草稿', published:'已发布', archived:'已归档' };
+  function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function dateToday() { var d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function channelName(value) { return value === 'morning' || value === '晨修' ? '晨修' : '宣教动态与见证'; }
+  function statusOf(item) { return item.status || 'published'; }
+  function message(text, kind) { $('message').textContent=text; $('message').className='notice message '+(kind || ''); $('message').hidden=!text; }
+  function errorMessage(data, fallback) { if(data && data.message) return data.message; if(data && data.error && data.error.message) return data.error.message; if(data && typeof data.error === 'string') return data.error; return fallback; }
+  function loginRequired(note) {
+    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.contentLoaded=false; state.usersLoaded=false;
+    resetEditor(); $('app').hidden=true; $('password-panel').hidden=true; $('boot').hidden=true; $('logout').hidden=true; $('login-panel').hidden=false;
+    $('password-form').reset(); $('create-user-form').reset(); if(note) message(note,'error');
+  }
+  async function request(path, options) {
+    options=options || {}; var method=options.method || 'GET'; var controller=new AbortController(); var timeout=setTimeout(function(){controller.abort();},30000);
+    var headers={}; if(method !== 'GET') headers['X-CSRF-Token']=state.csrf;
+    if(options.body !== undefined) { headers['Content-Type']='application/json'; }
+    var response;
+    try { response=await fetch('/api/admin'+path,{method:method,credentials:'same-origin',cache:'no-store',headers:headers,body:options.body === undefined ? undefined : JSON.stringify(options.body),signal:controller.signal}); }
+    catch(error) { throw new Error(error.name === 'AbortError' ? '请求等待时间较长，请检查网络后重试。' : '暂时无法连接服务器，请检查网络后重试。'); }
+    finally { clearTimeout(timeout); }
+    var data; try { data=await response.json(); } catch(error) { data={}; }
+    if(response.status === 401 && path !== '/login') { loginRequired('登录已过期，请重新登录。未保存的内容需要重新填写。'); throw new Error('登录已过期，请重新登录。'); }
+    if(!response.ok) throw new Error(errorMessage(data,'操作未完成，请稍后重试。'));
+    return data;
+  }
+  function acceptSession(data) { state.user=data.user; state.csrf=data.csrfToken || state.csrf; }
+  function showAuthenticated() {
+    $('boot').hidden=true; $('login-panel').hidden=true; $('logout').hidden=false;
+    if(state.user.mustChangePassword) { showPassword(true); return; }
+    $('password-panel').hidden=true; $('app').hidden=false; $('identity').textContent=state.user.username+' · '+(state.user.role === 'admin' ? '管理员' : '编辑同工');
+    $('tab-users').hidden=state.user.role !== 'admin'; if(state.view === 'users' && state.user.role !== 'admin') state.view='compose';
+    showView(state.view);
+  }
+  function showPassword(required) { $('app').hidden=true; $('password-panel').hidden=false; $('password-back').hidden=required; $('password-title').textContent=required ? '设置自己的密码' : '修改登录密码'; $('password-intro').textContent=required ? '首次登录或管理员重置密码后，请先更换临时密码，再发布内容。' : '更换后请使用新密码登录，并妥善保存。'; $('password-form').reset(); }
+  function showView(view) {
+    state.view=view;
+    ['compose','library','users'].forEach(function(name) { $('view-'+name).hidden=name !== view; $('tab-'+name).setAttribute('aria-selected',String(name === view)); });
+    if(view === 'library' && !state.contentLoaded) loadContent(); if(view === 'users' && !state.usersLoaded) loadUsers();
+  }
+  function lockForm(form, busy, label) { Array.prototype.forEach.call(form.querySelectorAll('button,input,select,textarea'),function(control){ control.disabled=busy; }); form.setAttribute('aria-busy',String(busy)); if(label) message(label); }
+  function clearSelected() { state.selected.forEach(function(file){URL.revokeObjectURL(file.url);}); state.selected=[]; $('content-images').value=''; renderSelected(); }
+  function resetEditor() {
+    state.editing=null; $('content-form').reset(); $('content-date').value=dateToday(); clearSelected(); $('existing-images-wrap').hidden=true; $('existing-images').innerHTML=''; $('new-content').hidden=true; $('editor-heading').textContent='发布每日内容'; $('editor-description').textContent='选择栏目、日期和清晰原图，即可保存草稿或发布给大家阅读。'; $('publish-content').textContent='发布内容'; $('images-label').innerHTML='上传清晰图片 <span class="muted">（可多选）</span>';
+  }
+  function renderSelected() {
+    $('selected-images').innerHTML=state.selected.map(function(image,index){ return '<div class="image-card"><img src="'+escapeHtml(image.url)+'" alt="待上传图片 '+(index+1)+'"><div class="image-index">第 '+(index+1)+' 张</div><div class="image-name" title="'+escapeHtml(image.file.name)+'">'+escapeHtml(image.file.name)+'</div><div class="image-controls"><button type="button" data-image-action="up" data-index="'+index+'" aria-label="第 '+(index+1)+' 张向前移动" '+(index === 0 ? 'disabled' : '')+'>↑</button><button type="button" data-image-action="down" data-index="'+index+'" aria-label="第 '+(index+1)+' 张向后移动" '+(index === state.selected.length-1 ? 'disabled' : '')+'>↓</button><button type="button" class="remove" data-image-action="remove" data-index="'+index+'" aria-label="移除第 '+(index+1)+' 张">移除</button></div></div>'; }).join('');
+    $('selected-summary').hidden=!state.selected.length; var total=state.selected.reduce(function(sum,image){return sum+image.file.size;},0); $('selected-summary').textContent='已选择 '+state.selected.length+' 张，共 '+(total/1048576).toFixed(1)+' MB。可再次选择，继续添加图片。'+(state.editing ? '保存后将替换当前整组图片。' : '');
+  }
+  function uploadContent(path,formData) {
+    return new Promise(function(resolve,reject){
+      var xhr=new XMLHttpRequest(); xhr.open('POST','/api/admin'+path); xhr.withCredentials=true; xhr.timeout=180000; xhr.setRequestHeader('X-CSRF-Token',state.csrf);
+      xhr.upload.onprogress=function(event){ if(event.lengthComputable){ var percent=Math.round(event.loaded/event.total*100); $('upload-progress').value=percent; $('upload-status').textContent=percent < 100 ? '正在上传图片 '+percent+'%，请保持页面打开…' : '图片已上传，正在保存并更新阅读内容…'; } };
+      xhr.onload=function(){var data={}; try { data=JSON.parse(xhr.responseText || '{}'); } catch(error) {} if(xhr.status === 401) { loginRequired('登录已过期，请重新登录后上传。'); reject(new Error('登录已过期，请重新登录。')); return; } if(xhr.status < 200 || xhr.status >= 300) { reject(new Error(errorMessage(data,'上传未完成，请稍后重试。'))); return; } resolve(data);};
+      xhr.onerror=function(){reject(new Error('上传时网络连接中断，请检查网络后重试。'));}; xhr.ontimeout=function(){reject(new Error('上传等待超时。请检查网络，或减少一次上传的图片数量后重试。'));}; xhr.send(formData);
+    });
+  }
+  async function saveContent(status) {
+    if(state.saving) return; if(!$('content-form').reportValidity()) return;
+    if(!state.editing && !state.selected.length) { message('请至少选择一张清晰图片。','error'); $('content-images').focus(); return; }
+    var isPublished=state.editing && statusOf(state.editing) === 'published';
+    if(status === 'draft' && isPublished && !window.confirm('保存为草稿后，这条内容会从公开阅读页面下架。确定继续吗？')) return;
+    state.saving=true; var date=$('content-date').value; var channel=$('content-channel').value; var title=$('content-title').value.trim() || channelName(channel)+' · '+date;
+    var metadata={date:date,channel:channel,title:title,excerpt:$('content-excerpt').value.trim(),status:status};
+    lockForm($('content-form'),true); message('正在保存内容，请保持页面打开…'); $('upload-progress-wrap').hidden=!state.selected.length; $('upload-progress').value=0;
+    try {
+      if(state.selected.length) { var form=new FormData(); Object.keys(metadata).forEach(function(key){form.append(key,metadata[key]);}); state.selected.forEach(function(image){form.append('images',image.file,image.file.name);}); await uploadContent('/content'+(state.editing ? '/'+encodeURIComponent(state.editing.id) : ''),form); }
+      else await request('/content/'+encodeURIComponent(state.editing.id),{method:'PUT',body:metadata});
+      resetEditor(); state.contentLoaded=false; showView('library'); message(status === 'published' ? '内容已发布。可点击“查看内容”确认阅读效果。' : '草稿已保存，仅同工登录后可见。','success'); window.scrollTo(0,0);
+    } catch(error) { message(error.message,'error'); }
+    finally { state.saving=false; lockForm($('content-form'),false); $('upload-progress-wrap').hidden=true; }
+  }
+  async function loadContent() {
+    $('content-list').innerHTML='<div class="panel empty">正在加载内容…</div>'; $('refresh-content').disabled=true;
+    try { var data=await request('/content'); state.items=(data.items || []).sort(function(a,b){return String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id));}); state.contentLoaded=true; renderContent(); }
+    catch(error) { $('content-list').innerHTML='<div class="panel empty">内容加载失败，请点击刷新重试。</div>'; message(error.message,'error'); }
+    finally { $('refresh-content').disabled=false; }
+  }
+  function renderContent() {
+    var channel=$('filter-channel').value, status=$('filter-status').value, query=$('filter-query').value.trim().toLowerCase();
+    var items=state.items.filter(function(item){return (!channel || channelName(item.channel) === channel) && (!status || statusOf(item) === status) && (!query || [item.title,item.date,item.excerpt,item.sourceFile].join(' ').toLowerCase().includes(query));});
+    $('content-count').textContent='共 '+state.items.length+' 条 · 当前筛选 '+items.length+' 条'; $('load-more').hidden=items.length <= state.limit;
+    $('content-list').innerHTML=items.slice(0,state.limit).map(function(item){
+      var status=statusOf(item); var segments=item.segments || []; var title=item.title || channelName(item.channel)+' · '+item.date; var img=segments.length && segments[0].uri ? '<img class="thumb" loading="lazy" src="'+escapeHtml(segments[0].uri)+'" alt="">' : '';
+      return '<article class="content-card"><div class="card-top">'+img+'<div class="card-copy"><div class="muted">'+escapeHtml(item.date)+' · '+escapeHtml(channelName(item.channel))+' <span class="badge '+status+'">'+escapeHtml(labels[status] || status)+'</span></div><h3 class="card-title">'+escapeHtml(title)+'</h3><div class="muted">'+segments.length+' 张图片</div></div></div>'+(item.excerpt ? '<p class="card-excerpt">'+escapeHtml(item.excerpt)+'</p>' : '')+'<div class="card-actions"><button class="btn small secondary" data-content-action="edit" data-id="'+escapeHtml(item.id)+'">编辑内容</button>'+(status === 'published' ? '<a class="btn small quiet" target="_blank" rel="noopener" href="/reader/'+encodeURIComponent(item.id)+'.html">查看发布 ↗</a>' : '')+(status === 'archived' ? '<button class="btn small secondary" data-content-action="restore" data-id="'+escapeHtml(item.id)+'">恢复为草稿</button>' : '<button class="btn small danger" data-content-action="archive" data-id="'+escapeHtml(item.id)+'">归档下架</button>')+'</div></article>';
+    }).join('') || '<div class="panel empty">没有符合条件的内容。可以调整筛选或发布新内容。</div>';
+  }
+  function editContent(item) {
+    resetEditor(); state.editing=item; $('content-date').value=item.date; $('content-channel').value=channelName(item.channel) === '晨修' ? 'morning' : 'mission'; $('content-title').value=item.title || ''; $('content-excerpt').value=item.excerpt || ''; $('editor-heading').textContent='编辑内容'; $('editor-description').textContent='当前状态：'+(labels[statusOf(item)] || statusOf(item))+'。可更新文字，或选择新图片整组替换。'; $('new-content').hidden=false; $('publish-content').textContent=statusOf(item) === 'published' ? '保存并保持发布' : '发布内容'; $('images-label').innerHTML='替换为新图片 <span class="muted">（选填，可多选）</span>';
+    var images=(item.segments || []).filter(function(segment){return !!segment.uri;}); $('existing-images-wrap').hidden=!images.length; $('existing-images').innerHTML=images.map(function(image,index){return '<div class="image-card"><a href="'+escapeHtml(image.uri)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+escapeHtml(image.uri)+'" alt="当前第 '+(index+1)+' 张图片"></a><div class="image-index">第 '+(index+1)+' 张</div></div>';}).join(''); showView('compose'); message(''); window.scrollTo(0,0);
+  }
+  async function updateStatus(item,status,button) {
+    var confirmText=status === 'archived' ? '归档后，这条内容会从公开页面下架，之后可恢复。确定归档吗？' : '恢复后先保存为草稿，检查内容后可重新发布。确定恢复吗？'; if(!window.confirm(confirmText)) return;
+    button.disabled=true;
+    try { await request('/content/'+encodeURIComponent(item.id),{method:'PUT',body:{status:status}}); item.status=status; renderContent(); message(status === 'archived' ? '内容已归档，已从公开页面下架。' : '内容已恢复为草稿，可编辑后发布。','success'); }
+    catch(error) { message(error.message,'error'); button.disabled=false; }
+  }
+  async function loadUsers() {
+    $('refresh-users').disabled=true; $('users-list').innerHTML='<div class="empty">正在加载同工账号…</div>';
+    try { var data=await request('/users'); state.users=data.users || []; state.usersLoaded=true; renderUsers(); }
+    catch(error) { $('users-list').innerHTML='<div class="empty">账号加载失败，请点击刷新重试。</div>'; message(error.message,'error'); }
+    finally { $('refresh-users').disabled=false; }
+  }
+  function renderUsers() {
+    $('users-list').innerHTML=state.users.map(function(user){var isSelf=String(user.id) === String(state.user.id); var active=user.active !== false && user.active !== 0; return '<article class="user-card"><div class="row between"><h3>'+escapeHtml(user.username)+(isSelf ? ' <span class="muted">（当前账号）</span>' : '')+'</h3><span class="badge '+(active ? '' : 'disabled')+'">'+(active ? '已启用' : '已禁用')+'</span></div><div class="muted">'+(user.role === 'admin' ? '管理员' : '编辑同工')+(user.mustChangePassword ? ' · 下次登录需修改密码' : '')+'</div>'+(isSelf ? '' : '<div class="row"><button class="btn small secondary" data-user-action="reset" data-id="'+escapeHtml(user.id)+'">重置密码</button><button class="btn small '+(active ? 'danger' : 'quiet')+'" data-user-action="toggle" data-id="'+escapeHtml(user.id)+'">'+(active ? '禁用账号' : '启用账号')+'</button></div><form class="small-form" data-reset-id="'+escapeHtml(user.id)+'" hidden><label style="margin-top:0" for="reset-'+escapeHtml(user.id)+'">新的临时密码</label><input id="reset-'+escapeHtml(user.id)+'" type="password" autocomplete="new-password" required minlength="12"><p class="help">至少 12 个字符，重置后请单独通知同工。</p><div class="row"><button class="btn small" type="submit">确认重置</button><button class="btn small secondary" type="button" data-user-action="cancel" data-id="'+escapeHtml(user.id)+'">取消</button></div></form>')+'</article>'; }).join('') || '<div class="empty">暂无同工账号。</div>';
+  }
+  $('login-form').addEventListener('submit',async function(event){ event.preventDefault(); var form=this; lockForm(form,true); message(''); try { var data=await request('/login',{method:'POST',body:{username:$('login-username').value.trim(),password:$('login-password').value}}); acceptSession(data); form.reset(); showAuthenticated(); } catch(error) { message(error.message,'error'); } finally {lockForm(form,false);} });
+  $('logout').addEventListener('click',async function(){ if(state.saving){message('图片正在保存，请等待完成后退出。','error');return;} this.disabled=true; try { await request('/logout',{method:'POST',body:{}}); loginRequired(); message('已退出登录。','success'); } catch(error) { message(error.message,'error'); } finally {this.disabled=false;} });
+  $('change-password').addEventListener('click',function(){if(state.saving) return; showPassword(false);message('');});
+  $('password-back').addEventListener('click',function(){showAuthenticated();message('');});
+  $('password-form').addEventListener('submit',async function(event){event.preventDefault(); if($('new-password').value !== $('confirm-password').value){message('两次输入的新密码不一致，请重新确认。','error');return;} var form=this; lockForm(form,true); try {var data=await request('/password',{method:'POST',body:{currentPassword:$('current-password').value,newPassword:$('new-password').value}}); if(data.user) acceptSession(data); else {state.user.mustChangePassword=false; if(data.csrfToken) state.csrf=data.csrfToken;} form.reset(); showAuthenticated(); message('密码已更新，请妥善保存。','success');} catch(error){message(error.message,'error');} finally {lockForm(form,false);} });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-view]'),function(button){button.addEventListener('click',function(){if(state.saving){message('内容正在保存，请稍候再切换。');return;} message(''); showView(this.getAttribute('data-view'));});});
+  $('content-images').addEventListener('change',function(){var skipped=[]; Array.prototype.forEach.call(this.files,function(file){if(!/\.(jpe?g|png|webp)$/i.test(file.name) && !/^image\/(jpeg|png|webp)$/.test(file.type)){skipped.push(file.name);return;} state.selected.push({file:file,url:URL.createObjectURL(file)});}); this.value='';renderSelected(); if(skipped.length)message('以下文件格式暂不支持，请先转为 JPG、PNG 或 WebP：'+skipped.join('、'),'error');else message('');});
+  $('selected-images').addEventListener('click',function(event){var button=event.target.closest('[data-image-action]');if(!button || state.saving)return;var index=Number(button.getAttribute('data-index')), action=button.getAttribute('data-image-action');if(action === 'remove'){URL.revokeObjectURL(state.selected[index].url);state.selected.splice(index,1);}else {var next=action === 'up' ? index-1 : index+1; if(next < 0 || next >= state.selected.length)return; var item=state.selected[index];state.selected[index]=state.selected[next];state.selected[next]=item;}renderSelected();});
+  $('content-form').addEventListener('submit',function(event){event.preventDefault();saveContent(event.submitter && event.submitter.value === 'draft' ? 'draft' : 'published');});
+  $('new-content').addEventListener('click',function(){if(state.saving)return;if(!window.confirm('取消当前编辑并填写新内容？未保存的修改将丢弃。'))return;resetEditor();message('');});
+  $('refresh-content').addEventListener('click',function(){message('');loadContent();});
+  ['filter-channel','filter-status','filter-query'].forEach(function(id){$(id).addEventListener(id === 'filter-query' ? 'input' : 'change',function(){state.limit=30;renderContent();});});
+  $('load-more').addEventListener('click',function(){state.limit+=30;renderContent();});
+  $('content-list').addEventListener('click',function(event){var button=event.target.closest('[data-content-action]');if(!button)return;var item=state.items.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return;var action=button.getAttribute('data-content-action');if(action === 'edit')editContent(item);else updateStatus(item,action === 'archive' ? 'archived' : 'draft',button);});
+  $('create-user-form').addEventListener('submit',async function(event){event.preventDefault();var form=this;lockForm(form,true);try{await request('/users',{method:'POST',body:{username:$('new-username').value.trim(),password:$('new-user-password').value,role:$('new-role').value}});form.reset();state.usersLoaded=false;await loadUsers();message('同工账号已创建。请将管理入口、账号和临时密码单独发送给该同工。','success');}catch(error){message(error.message,'error');}finally{lockForm(form,false);}});
+  $('refresh-users').addEventListener('click',function(){message('');loadUsers();});
+  $('users-list').addEventListener('click',async function(event){var button=event.target.closest('[data-user-action]');if(!button)return;var user=state.users.find(function(user){return String(user.id) === button.getAttribute('data-id');});if(!user)return;var action=button.getAttribute('data-user-action');var form=Array.prototype.find.call($('users-list').querySelectorAll('[data-reset-id]'),function(form){return form.getAttribute('data-reset-id') === String(user.id);});if(action === 'reset' || action === 'cancel'){form.hidden=action === 'cancel';if(!form.hidden)form.querySelector('input').focus();else form.reset();return;}var active=user.active !== false && user.active !== 0;if(!window.confirm((active ? '禁用 '+user.username+' 后，该同工将无法继续登录和操作。' : '确认重新启用 '+user.username+' 的账号？')))return;button.disabled=true;try{await request('/users/'+encodeURIComponent(user.id),{method:'PATCH',body:{active:!active}});await loadUsers();message(active ? '账号已禁用。' : '账号已启用。','success');}catch(error){message(error.message,'error');button.disabled=false;}});
+  $('users-list').addEventListener('submit',async function(event){var form=event.target.closest('[data-reset-id]');if(!form)return;event.preventDefault();lockForm(form,true);try{await request('/users/'+encodeURIComponent(form.getAttribute('data-reset-id')),{method:'PATCH',body:{password:form.querySelector('input').value}});await loadUsers();message('密码已重置。同工下次登录时需设置自己的密码。','success');}catch(error){message(error.message,'error');lockForm(form,false);}});
+  window.addEventListener('beforeunload',function(event){if(state.saving || state.selected.length){event.preventDefault();event.returnValue='';}});
+  resetEditor();
+  request('/session').then(function(data){acceptSession(data);showAuthenticated();}).catch(function(error){loginRequired();if(error.message !== '登录已过期，请重新登录。')message(error.message,'error');else message('');});
+})();
+</script>
+</body>
+</html>
