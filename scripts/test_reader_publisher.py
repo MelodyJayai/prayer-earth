@@ -182,6 +182,29 @@ class PublisherTests(unittest.TestCase):
                            dt.datetime.fromisoformat(previous["verifiedAt"]))
         self.assertFalse(result["verify_public"].call_args.kwargs["full"])
 
+    def test_non_ascii_state_round_trip_ignores_process_locale(self):
+        # Path.read_text() with no encoding follows the process locale (GBK on the
+        # publisher host). Force that default to ASCII so this still fails if the
+        # publisher forgets encoding="utf-8", even when the CI locale is UTF-8.
+        previous = {"signature": "same", "contentVersion": 2, "counts": {"all": 211},
+                    "verifiedAt": "2026-10-19T00:00:00+00:00", "deploymentId": "dep-1",
+                    "hostname": publisher.HOSTNAME, "note": "核对通过"}
+        real_text_encoding = io.text_encoding
+
+        def ascii_default(encoding=None, *args, **kwargs):
+            if encoding in (None, "locale"):
+                return "ascii"
+            return real_text_encoding(encoding, *args, **kwargs)
+
+        with patch.object(io, "text_encoding", side_effect=ascii_default):
+            result = self._run_main(previous=previous, current_signature="same")
+        self.assertEqual(result["code"], 0)
+        self.assertEqual(result["state"]["note"], "核对通过")
+        self.assertEqual(result["state"]["deploymentId"], "dep-1")
+        self.assertIn("核对通过", result["raw_state"])
+        self.assertGreater(dt.datetime.fromisoformat(result["state"]["verifiedAt"]),
+                           dt.datetime.fromisoformat(previous["verifiedAt"]))
+
     def test_verify_only_does_not_record_undeployed_signature(self):
         previous = {"signature": "old", "contentVersion": 2, "counts": {"all": 211},
                     "verifiedAt": "2026-10-19T00:00:00+00:00", "deploymentId": "dep-1",

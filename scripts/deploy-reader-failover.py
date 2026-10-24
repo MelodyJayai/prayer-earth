@@ -351,7 +351,7 @@ def public_request(path, *, method="GET", expected=(200,)):
         if status not in expected:
             raise RuntimeError(f"public health check returned HTTP {status} for {path}")
         response_headers = {}
-        for line in headers.read_text(errors="replace").splitlines():
+        for line in headers.read_text(encoding="utf-8", errors="replace").splitlines():
             if ":" in line:
                 key, value = line.split(":", 1)
                 response_headers[key.lower()] = value.strip()
@@ -443,7 +443,7 @@ def main():
     folder = (args.snapshot_directory or WORK / "snapshot").resolve()
     manifest = validate_snapshot(folder) if args.snapshot_directory else pull_snapshot(folder)
     state_file = WORK / "state.json"
-    previous = json.loads(state_file.read_text()) if state_file.exists() else {}
+    previous = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {}
     current_signature = signature(manifest)
     log(f'snapshot validated: version {manifest["contentVersion"]}, {manifest["counts"]["all"]} items, {len(manifest["files"])} files')
     if args.dry_run:
