@@ -383,9 +383,37 @@ def verify_public(manifest, folder, *, full=False):
 
 
 def signature(manifest):
+    # health.json and manifest generatedAt sit outside the content hashes.
+    # A snapshot rebuild with the same files must not look like a new release.
     value = {"files": manifest["files"], "version": manifest["contentVersion"], "worker": digest(SOURCE.read_bytes()),
              "config": ASSET_CONFIG, "account": ACCOUNT_ID, "target": WORKER, "hostname": HOSTNAME}
     return digest(json.dumps(value, sort_keys=True).encode())
+
+
+_KEEP_DEPLOYMENT_ID = object()
+
+
+def publish_state(previous, manifest, current_signature, *, deployment_id=_KEEP_DEPLOYMENT_ID):
+    """State recorded after a successful public verification.
+
+    A no-deploy run refreshes verifiedAt and keeps deploymentId (and any
+    extra fields). A real deploy passes deployment_id to replace it.
+    """
+    state = dict(previous)
+    state["signature"] = current_signature
+    state["contentVersion"] = manifest["contentVersion"]
+    state["counts"] = manifest["counts"]
+    state["verifiedAt"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    state["hostname"] = HOSTNAME
+    if deployment_id is not _KEEP_DEPLOYMENT_ID:
+        state["deploymentId"] = deployment_id
+    return state
+
+
+def write_publish_state(state_file, state):
+    temporary = state_file.with_suffix(".new")
+    temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.replace(state_file)
 
 
 def bind_domain(cf_token):
@@ -421,8 +449,15 @@ def main():
     if args.dry_run:
         log("dry run: no Cloudflare changes")
         return 0
+    # generatedAt advances on every OCI snapshot rebuild, but it is not part of
+    # signature(). Redeploying whenever the local stamp is newer would publish
+    # every 15 minutes. Public generatedAt stays the last content publish;
+    # liveness is verifiedAt below, including this no-deploy path.
     if args.verify_only or (not args.force and previous.get("signature") == current_signature):
         verify_public(manifest, folder, full=args.full_verify)
+        if previous.get("signature") == current_signature:
+            write_publish_state(state_file, publish_state(previous, manifest, current_signature))
+            log("publisher state verifiedAt refreshed")
         log("public snapshot verified; no deployment needed")
         return 0
     cf_token = read_token(args.token_file)
@@ -449,12 +484,8 @@ def main():
             if attempt == 9:
                 raise
             time.sleep(5)
-    state = {"signature": current_signature, "contentVersion": manifest["contentVersion"], "counts": manifest["counts"],
-             "verifiedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "deploymentId": result.get("deployment_id"),
-             "hostname": HOSTNAME}
-    temporary = state_file.with_suffix(".new")
-    temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(state_file)
+    write_publish_state(state_file, publish_state(
+        previous, manifest, current_signature, deployment_id=result.get("deployment_id")))
     log(f"deployed and verified https://{HOSTNAME}")
     return 0
 
