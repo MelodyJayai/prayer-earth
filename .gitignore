@@ -39,8 +39,13 @@ __pycache__/
 .pytest_cache/
 
 
-# Source exports and mutable runtime data
+# Source exports and mutable runtime data.
+# Ignore a local WeChat Save As drop anywhere under the repo, including the
+# legacy WeChatImages/WeChatImages tree and a junction copied into the checkout.
+# The operator folder beside the repo (../WeChatImages) is outside git already.
 /WeChatImages/
+WeChatImages/
+.wechat-import/
 /data/
 /backups/
 /snapshots/

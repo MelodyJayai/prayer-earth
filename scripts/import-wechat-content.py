@@ -1,5 +1,12 @@
 """Import WeChat image posts into the local trial content library.
 
+Option A keeps the PC WeChat "Save As" folder outside git. Resolve that folder
+from ``--source``, then ``PRAYER_WECHAT_IMAGES``, then
+``<repo>/WeChatImages/WeChatImages`` when the directory exists, then a sibling
+``<repo>/../WeChatImages``. ``--dry-run`` only prints the chosen directory and
+``.jpg`` names. The real import still classifies, excludes, splits, and writes
+the manifest and ``contentData.ts`` as before.
+
 The source folder is intentionally kept outside the generated asset folders. Run
 this script again after adding new WeChat exports to refresh the trial build.
 Only decodable images that meet the minimum dimensions are copied; this is a
@@ -11,18 +18,25 @@ devices.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
+import os
 import re
 from collections import Counter
+from collections.abc import Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
-from PIL import Image
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-SOURCE = PROJECT / "WeChatImages" / "WeChatImages"
+# Keep this order aligned with scripts/watch-wechat-images.ps1.
+SOURCE_ENV = "PRAYER_WECHAT_IMAGES"
+LEGACY_SOURCE = PROJECT / "WeChatImages" / "WeChatImages"
+SIBLING_SOURCE = PROJECT.parent / "WeChatImages"
 ASSET_ROOT = PROJECT / "assets" / "content"
 MANIFEST_PATH = PROJECT / "docs" / "content-import-manifest.json"
 DATA_PATH = PROJECT / "src" / "contentData.ts"
@@ -36,7 +50,56 @@ CHANNEL_OVERRIDES = {
 }
 
 
+def require_source_directory(path: Path, label: str) -> Path:
+    resolved = path.expanduser().resolve()
+    if not resolved.is_dir():
+        raise SystemExit(f"Source folder not found ({label}): {resolved}")
+    return resolved
+
+
+def resolve_source_directory(
+    explicit: Path | None = None,
+    env: Mapping[str, str] | None = None,
+    *,
+    legacy: Path | None = None,
+    sibling: Path | None = None,
+) -> Path:
+    """Return the Save As directory. Explicit paths and env do not fall through."""
+    environment = os.environ if env is None else env
+    legacy_path = LEGACY_SOURCE if legacy is None else legacy
+    sibling_path = SIBLING_SOURCE if sibling is None else sibling
+    if explicit is not None:
+        return require_source_directory(explicit, "--source")
+    raw_env = environment.get(SOURCE_ENV, "").strip()
+    if raw_env:
+        return require_source_directory(Path(raw_env), SOURCE_ENV)
+    for candidate in (legacy_path, sibling_path):
+        if candidate.is_dir():
+            return candidate.resolve()
+    raise SystemExit(
+        "Source folder not found. Pass --source, set "
+        f"{SOURCE_ENV}, or create one of:\n"
+        f"  - {legacy_path}\n"
+        f"  - {sibling_path}"
+    )
+
+
+def require_imaging_libraries():
+    """Import Pillow and numpy before the importer replaces generated assets."""
+    try:
+        import numpy  # noqa: F401
+        from PIL import Image
+    except ImportError as error:
+        raise SystemExit(
+            "Pillow and numpy are required to import WeChat images. "
+            "Install them and rerun. --dry-run only checks the source folder."
+        ) from error
+    return Image
+
+
 def color_density(image: Image.Image) -> float:
+    import numpy as np
+
     width, height = image.size
     sample = np.asarray(
         image.resize((100, max(1, int(100 * height / width)))).convert("RGB")
@@ -49,6 +112,8 @@ def color_density(image: Image.Image) -> float:
 
 def split_image(source: Path, target_dir: Path, stem: str) -> list[dict[str, int | str]]:
     """Write JPEG segments without resizing the source image."""
+    from PIL import Image
+
     segments: list[dict[str, int | str]] = []
     with Image.open(source) as image:
         image = image.convert("RGB")
@@ -124,9 +189,40 @@ def stable_item_id(
     return candidate
 
 
-def main() -> None:
-    if not SOURCE.exists():
-        raise SystemExit(f"Source folder not found: {SOURCE}")
+def list_source_images(source_dir: Path) -> list[Path]:
+    return sorted(source_dir.glob("*.jpg"))
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--source",
+        type=Path,
+        help=(
+            "WeChat Save As directory. Overrides PRAYER_WECHAT_IMAGES. "
+            "When omitted, use <repo>/WeChatImages/WeChatImages if that directory "
+            "exists, otherwise <repo>/../WeChatImages."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Print the resolved source directory and .jpg names without writing "
+            "assets, the manifest, or contentData.ts."
+        ),
+    )
+    args = parser.parse_args(argv)
+    source_dir = resolve_source_directory(args.source)
+    if args.dry_run:
+        files = list_source_images(source_dir)
+        print(f"source={source_dir}")
+        print(f"jpg={len(files)}")
+        for path in files:
+            print(path.name)
+        return 0
+
+    Image = require_imaging_libraries()
     prior_manifest = read_previous_manifest()
     old_ids = previous_ids(prior_manifest)
     for directory in (ASSET_ROOT / "morning", ASSET_ROOT / "mission"):
@@ -142,7 +238,7 @@ def main() -> None:
     items: list[dict[str, object]] = []
     skipped: list[dict[str, object]] = []
 
-    for source in sorted(SOURCE.glob("*.jpg")):
+    for source in list_source_images(source_dir):
         digest = hashlib.sha256(source.read_bytes()).hexdigest()
         if digest in seen_hashes:
             counts["duplicate"] += 1
@@ -211,7 +307,7 @@ def main() -> None:
     MANIFEST_PATH.write_text(
         json.dumps(
             {
-                "source": str(SOURCE),
+                "source": str(source_dir),
                 "counts": dict(counts),
                 "maxSegmentHeight": MAX_SEGMENT_HEIGHT,
                 "items": items,
@@ -262,7 +358,8 @@ def main() -> None:
     DATA_PATH.write_text("\n".join(lines), encoding="utf-8")
     print(json.dumps(dict(counts), ensure_ascii=False))
     print(f"items={len(items)} segments={sum(len(item['segments']) for item in items)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

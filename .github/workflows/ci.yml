@@ -53,7 +53,7 @@ jobs:
         run: npm test
 
       - name: Backend and reader regression tests
-        run: python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher
+        run: python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher scripts.test_import_wechat_source
 
       - name: Expo Doctor
         run: npx expo-doctor
