@@ -19,6 +19,8 @@ npm run start
 
 GitHub Actions 的 CI 会在 Node.js 24 和 Python 3.14 上执行 TypeScript、ESLint、Vitest、后台与阅读器回归测试、Expo Doctor 和 Web 导出；提交 PR 或推送到 `main` / `master` 时自动触发。
 
+电脑版微信群图片按方案 A 导入：另存为到仓库同级的 `WeChatImages`，再入库。步骤见 [`docs/content-import.md`](./docs/content-import.md)。
+
 ## 已实现
 
 - Expo Router 原生 Tab、发布页、详情深链与返回栈

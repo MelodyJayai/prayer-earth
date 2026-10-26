@@ -12,6 +12,7 @@
     "lint": "expo lint",
     "test": "vitest run",
     "import:content": "python scripts/import-wechat-content.py",
+    "import:content:dry": "python scripts/import-wechat-content.py --dry-run",
     "serve:static": "python scripts/serve-static.py --directory dist",
     "verify": "npm run typecheck && npm run lint && npm run test && npx expo-doctor",
     "build:web": "expo export --platform web && python scripts/generate-reader.py --dist dist"
