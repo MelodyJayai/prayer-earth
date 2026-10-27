@@ -70,6 +70,8 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     copied = set()
     for item in items:
+        if item.get("kind") == "news" or item.get("channel") == "宗教动态":
+            continue
         for segment in item.get("segments", []):
             uri = str(segment.get("uri", ""))
             if uri not in copied:
@@ -77,7 +79,7 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
                 copied.add(uri)
     reader = output / "reader"
     reader.mkdir(parents=True, exist_ok=True)
-    routes = ["index.html", "morning.html", "mission.html"]
+    routes = ["index.html", "morning.html", "mission.html", "news.html"]
     routes.extend(f'{item["id"]}.html' for item in items)
     for route in routes:
         markup = render_feed_reader(route, items, include_admin=False)
@@ -94,6 +96,7 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
         "all": len(items),
         "morning": sum(1 for item in items if item.get("channel") == "晨修"),
         "mission": sum(1 for item in items if item.get("channel") == "宣教动态与见证"),
+        "news": sum(1 for item in items if item.get("kind") == "news" or item.get("channel") == "宗教动态"),
     }
     manifest = {
         "schema": 1,

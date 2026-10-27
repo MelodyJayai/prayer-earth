@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import argparse
+import collections
 import datetime as dt
 import hashlib
 import hmac
@@ -37,7 +38,7 @@ from email import policy
 from email.parser import BytesParser
 from http.cookies import SimpleCookie
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
@@ -49,6 +50,23 @@ MAX_IMAGES = 20
 PASSWORD_ITERATIONS = 600_000
 SESSION_SECONDS = 8 * 60 * 60
 CHANNELS = {"morning": "晨修", "mission": "宣教动态与见证", "晨修": "晨修", "宣教动态与见证": "宣教动态与见证"}
+MAX_INGEST_BODY = 64 * 1024
+MAX_NEWS_BATCH = 30
+MAX_NEWS_TITLE = 120
+MAX_NEWS_SUMMARY = 400
+MAX_NEWS_SOURCE_NAME = 60
+MAX_NEWS_REGION = 40
+MAX_NEWS_URL = 500
+MAX_INGEST_KEY = 256
+MIN_INGEST_KEY = 16
+INGEST_LIMIT = 8
+INGEST_WINDOW_SECONDS = 600
+INGEST_KEY_ENV = "PRAYER_NEWS_INGEST_KEY"
+INGEST_KEY_FILE_ENV = "PRAYER_NEWS_INGEST_KEY_FILE"
+DEFAULT_INGEST_KEY_FILE = Path("/etc/prayer-earth-news/ingest.key")
+NEWS_CHANNEL = "宗教动态"
+NEWS_CATEGORIES = {"基督教", "宗教宣教", "教会", "教会相关"}
+NEWS_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", "region", "verified", "category"}
 
 
 class ApiError(Exception):
@@ -88,6 +106,142 @@ def _digest(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+class IngestLimiter:
+    """Short in-process cap for the unattended news ingest endpoint."""
+
+    def __init__(self, limit: int = INGEST_LIMIT, window_seconds: int = INGEST_WINDOW_SECONDS):
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self._lock = threading.Lock()
+        self._events: dict[str, collections.deque] = {}
+
+    def allow(self, identity: str) -> bool:
+        now = time.monotonic()
+        with self._lock:
+            events = self._events.setdefault(identity, collections.deque())
+            cutoff = now - self.window_seconds
+            while events and events[0] <= cutoff:
+                events.popleft()
+            if len(events) >= self.limit:
+                return False
+            events.append(now)
+            if len(self._events) > 2048:
+                stale = [key for key, value in self._events.items() if not value or value[-1] <= cutoff]
+                for key in stale[:1024]:
+                    self._events.pop(key, None)
+            return True
+
+
+def _keys_equal(provided: str, expected: str) -> bool:
+    # Compare fixed-length digests so a different length cannot skip the check.
+    actual = hashlib.sha256(provided.encode("utf-8")).digest()
+    stored = hashlib.sha256(expected.encode("utf-8")).digest()
+    return hmac.compare_digest(actual, stored)
+
+
+def _usable_secret(value: str) -> bool:
+    return MIN_INGEST_KEY <= len(value) <= MAX_INGEST_KEY and not any(ord(ch) < 32 or ord(ch) == 127 for ch in value)
+
+
+def _read_secret_file(path: Path) -> str:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        raise ApiError(503, "ingest_unavailable", "动态提交入口未就绪。") from None
+    if not data or len(data) > MAX_INGEST_KEY + 2:
+        raise ApiError(503, "ingest_unavailable", "动态提交入口未就绪。")
+    try:
+        text = data.decode("utf-8")
+    except UnicodeError:
+        raise ApiError(503, "ingest_unavailable", "动态提交入口未就绪。") from None
+    if text.endswith("\n"):
+        text = text[:-1]
+    if text.endswith("\r"):
+        text = text[:-1]
+    if not _usable_secret(text):
+        raise ApiError(503, "ingest_unavailable", "动态提交入口未就绪。")
+    return text
+
+
+def resolve_ingest_key() -> str | None:
+    """Return the ingest key, or None when the endpoint is closed.
+
+    A present but unusable configuration raises ApiError 503. The key is
+    never included in the exception or returned to logs by this function's
+    callers.
+    """
+    env = os.environ.get(INGEST_KEY_ENV)
+    if env:
+        if not _usable_secret(env):
+            raise ApiError(503, "ingest_unavailable", "动态提交入口未就绪。")
+        return env
+    configured = os.environ.get(INGEST_KEY_FILE_ENV)
+    if configured:
+        return _read_secret_file(Path(configured))
+    if DEFAULT_INGEST_KEY_FILE.is_file():
+        return _read_secret_file(DEFAULT_INGEST_KEY_FILE)
+    return None
+
+
+def _plain(value: object, *, minimum: int, maximum: int, code: str, message: str) -> str:
+    if not isinstance(value, str) or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        raise ApiError(400, code, message)
+    text = value.strip()
+    if not minimum <= len(text) <= maximum:
+        raise ApiError(400, code, message)
+    return text
+
+
+def _canonical_source_url(value: object) -> str:
+    if not isinstance(value, str) or not value or len(value) > MAX_NEWS_URL:
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。")
+    if any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in value) or "\\" in value:
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。")
+    parts = urlsplit(value)
+    scheme = parts.scheme.lower()
+    if scheme not in ("http", "https") or parts.username or parts.password:
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。")
+    host = parts.hostname
+    if not host:
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。")
+    try:
+        port = parts.port
+    except ValueError:
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。") from None
+    netloc = "[" + host.lower() + "]" if ":" in host else host.lower()
+    if port and not ((scheme == "https" and port == 443) or (scheme == "http" and port == 80)):
+        netloc += f":{port}"
+    path = parts.path or "/"
+    if not path.startswith("/"):
+        raise ApiError(400, "invalid_source_url", "来源链接须为 http 或 https。")
+    query = f"?{parts.query}" if parts.query else ""
+    return f"{scheme}://{netloc}{path}{query}"
+
+
+def _published_stamp(value: object) -> dt.datetime:
+    if not isinstance(value, str) or not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2}))?", value
+    ):
+        raise ApiError(400, "invalid_published_at", "发布时间须为 UTC 的 ISO-8601。")
+    try:
+        if "T" not in value:
+            day = dt.date.fromisoformat(value)
+            stamp = dt.datetime(day.year, day.month, day.day, tzinfo=dt.timezone.utc)
+        else:
+            stamp = dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
+    except ValueError:
+        raise ApiError(400, "invalid_published_at", "发布时间须为 UTC 的 ISO-8601。") from None
+    now = dt.datetime.now(dt.timezone.utc)
+    if stamp < dt.datetime(1990, 1, 1, tzinfo=dt.timezone.utc) or stamp > now + dt.timedelta(hours=36):
+        raise ApiError(400, "invalid_published_at", "发布时间超出允许范围。")
+    return stamp
+
+
+def _news_id(stamp: dt.datetime, canonical_url: str) -> str:
+    digest = hashlib.sha256(canonical_url.encode("utf-8")).hexdigest()[:12]
+    return f"news-{stamp.astimezone(dt.timezone.utc).strftime('%Y%m%d')}-{digest}"
+
+
 def _user(row) -> dict:
     return {"id": row["id"], "username": row["username"], "role": row["role"],
             "active": bool(row["active"]), "mustChangePassword": bool(row["must_change_password"])}
@@ -125,6 +279,11 @@ class AdminStore:
               action TEXT NOT NULL, target TEXT, detail TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value INTEGER NOT NULL);
             INSERT OR IGNORE INTO meta(key,value) VALUES ('version',1);
+            CREATE TABLE IF NOT EXISTS news (
+              id TEXT PRIMARY KEY, data TEXT NOT NULL, status TEXT NOT NULL
+              CHECK(status IN ('pending','published','rejected')),
+              created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS news_status ON news(status, id);
             """)
             if seed_file:
                 seed = json.loads(Path(seed_file).read_text(encoding="utf-8-sig"))
@@ -305,6 +464,11 @@ class AdminStore:
                 else:
                     item.update(status=row["status"], seeded=bool(row["seeded"]), updatedAt=row["updated_at"])
                 items.append(item)
+            if public:
+                # Pending and rejected news stay out of the public feed, the
+                # reader, and failover snapshots. Ingest does not bump version.
+                for news_row in db.execute("SELECT data FROM news WHERE status='published'"):
+                    items.append(self._public_news(json.loads(news_row["data"])))
             items.sort(key=lambda item: (item.get("date", ""), item["id"]), reverse=True)
             version = db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0]
             return {"version": version, "items": items}
@@ -419,6 +583,129 @@ class AdminStore:
                 shutil.rmtree(destination, ignore_errors=True)
             raise
 
+    @staticmethod
+    def _public_news(data: dict, *, status: str | None = None, updated_at: str | None = None) -> dict:
+        item = {
+            "id": data["id"],
+            "kind": "news",
+            "date": data["date"],
+            "channel": NEWS_CHANNEL,
+            "label": NEWS_CHANNEL,
+            "title": data["title"],
+            "excerpt": data["summary"],
+            "summary": data["summary"],
+            "sourceName": data["source_name"],
+            "sourceUrl": data["source_url"],
+            "publishedAt": data["published_at"],
+            "region": data["region"],
+            "verified": bool(data["verified"]),
+            "category": data["category"],
+        }
+        item["searchText"] = " ".join((
+            NEWS_CHANNEL, item["date"], item["title"], item["summary"],
+            item["sourceName"], item["region"], item["category"],
+        ))
+        if status is not None:
+            item["status"] = status
+            item["updatedAt"] = updated_at
+        return item
+
+    def _normalize_news_item(self, raw: object, index: int) -> dict:
+        label = f"第 {index + 1} 条"
+        if not isinstance(raw, dict):
+            raise ApiError(400, "invalid_news_item", f"{label}不是对象。")
+        if any(key not in NEWS_FIELDS for key in raw):
+            raise ApiError(400, "unknown_field", f"{label}包含不支持的字段。")
+        if NEWS_FIELDS - raw.keys():
+            raise ApiError(400, "invalid_news_item", f"{label}缺少必要字段。")
+        title = _plain(raw.get("title"), minimum=1, maximum=MAX_NEWS_TITLE, code="invalid_text",
+                       message=f"{label}标题须为 1–{MAX_NEWS_TITLE} 个字符。")
+        summary = _plain(raw.get("summary"), minimum=1, maximum=MAX_NEWS_SUMMARY, code="invalid_text",
+                         message=f"{label}摘要须为 1–{MAX_NEWS_SUMMARY} 个字符。")
+        source_name = _plain(raw.get("source_name"), minimum=1, maximum=MAX_NEWS_SOURCE_NAME, code="invalid_text",
+                             message=f"{label}来源名须为 1–{MAX_NEWS_SOURCE_NAME} 个字符。")
+        region = _plain(raw.get("region"), minimum=1, maximum=MAX_NEWS_REGION, code="invalid_text",
+                        message=f"{label}地区须为 1–{MAX_NEWS_REGION} 个字符。")
+        category = raw.get("category")
+        if not isinstance(category, str) or category.strip() not in NEWS_CATEGORIES:
+            raise ApiError(400, "invalid_category", f"{label}不属于基督教、宗教宣教或教会相关。")
+        if not isinstance(raw.get("verified"), bool):
+            raise ApiError(400, "invalid_verified", f"{label}的 verified 须为布尔值。")
+        source_url = _canonical_source_url(raw.get("source_url"))
+        stamp = _published_stamp(raw.get("published_at"))
+        return {
+            "id": _news_id(stamp, source_url),
+            "kind": "news",
+            "title": title,
+            "summary": summary,
+            "source_url": source_url,
+            "source_name": source_name,
+            "published_at": stamp.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "date": stamp.astimezone(dt.timezone.utc).date().isoformat(),
+            "region": region,
+            "verified": raw["verified"],
+            "category": category.strip(),
+            "channel": NEWS_CHANNEL,
+        }
+
+    def ingest_news(self, items: object) -> dict:
+        """Insert a religious news batch as pending. Duplicates are ignored.
+
+        Pending rows are not public and do not change the content version.
+        """
+        if not isinstance(items, list) or not items:
+            raise ApiError(400, "invalid_batch", f"请一次提交 1–{MAX_NEWS_BATCH} 条宗教动态。")
+        if len(items) > MAX_NEWS_BATCH:
+            raise ApiError(400, "batch_too_large", f"单次最多提交 {MAX_NEWS_BATCH} 条宗教动态。")
+        records = [self._normalize_news_item(item, index) for index, item in enumerate(items)]
+        inserted: list[str] = []
+        ignored: list[str] = []
+        with self._db() as db:
+            for record in records:
+                db.execute(
+                    "INSERT OR IGNORE INTO news(id,data,status,created_at,updated_at) VALUES (?,?,'pending',?,?)",
+                    (record["id"], json.dumps(record, ensure_ascii=False), _now(), _now()),
+                )
+                if db.execute("SELECT changes()").fetchone()[0]:
+                    inserted.append(record["id"])
+                else:
+                    ignored.append(record["id"])
+            # Ids only: titles and URLs can carry untrusted text or query tokens.
+            self._audit(db, "news-ingest", "ingest_news", None, {"inserted": inserted, "ignored": ignored})
+        return {"inserted": inserted, "ignored": ignored}
+
+    def list_news(self, status: str | None = None) -> list[dict]:
+        if status is not None and status not in ("pending", "published", "rejected"):
+            raise ApiError(400, "invalid_status", "状态须为 pending、published 或 rejected。")
+        with self._db() as db:
+            if status:
+                rows = db.execute("SELECT * FROM news WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
+            else:
+                rows = db.execute("SELECT * FROM news ORDER BY created_at DESC, id DESC").fetchall()
+            return [self._public_news(json.loads(row["data"]), status=row["status"], updated_at=row["updated_at"]) for row in rows]
+
+    def review_news(self, actor: str, news_id: str, action: str) -> dict:
+        if action not in ("publish", "reject"):
+            raise ApiError(400, "invalid_action", "审核动作须为公开或驳回。")
+        if not isinstance(news_id, str) or not re.fullmatch(r"news-[0-9]{8}-[a-f0-9]{12}", news_id):
+            raise ApiError(404, "news_not_found", "动态不存在。")
+        target = "published" if action == "publish" else "rejected"
+        with self._db() as db:
+            row = db.execute("SELECT * FROM news WHERE id=?", (news_id,)).fetchone()
+            if not row:
+                raise ApiError(404, "news_not_found", "动态不存在。")
+            previous = row["status"]
+            stamp = row["updated_at"]
+            if previous != target:
+                stamp = _now()
+                db.execute("UPDATE news SET status=?, updated_at=? WHERE id=?", (target, stamp, news_id))
+                # Version tracks the public feed. Leaving or entering `published`
+                # changes what readers and failover snapshots can see.
+                if previous == "published" or target == "published":
+                    self._bump(db)
+            self._audit(db, actor, f"{action}_news", news_id, {"from": previous, "to": target})
+            return self._public_news(json.loads(row["data"]), status=target, updated_at=stamp)
+
 
 def create_admin_store(data_dir, seed_file=None, **kwargs):
     return AdminStore(data_dir, seed_file, **kwargs)
@@ -426,14 +713,21 @@ def create_admin_store(data_dir, seed_file=None, **kwargs):
 
 class AdminRequestMixin:
     """Call handle_admin_request first in GET/POST/PUT/PATCH handler methods."""
-    def _api_json(self, status, payload, *, cookie=None, cache_control=None, etag=None):
+    def _api_json(self, status, payload, *, cookie=None, cache_control=None, etag=None, retry_after=None):
         if etag and self.headers.get("If-None-Match", "") == etag:
             self.send_response(304)
             self.send_header("ETag", etag)
             self.send_header("Cache-Control", cache_control or "no-store, private")
             self.end_headers()
             return
-        raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        # Escape HTML-sensitive characters in the JSON text so a response
+        # cannot break out of a surrounding page. Parsers restore the original
+        # characters; readers still escape again when rendering HTML.
+        raw = (json.dumps(payload, ensure_ascii=False)
+               .replace("&", "\\u0026")
+               .replace("<", "\\u003c")
+               .replace(">", "\\u003e")
+               .encode("utf-8"))
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
@@ -445,7 +739,7 @@ class AdminRequestMixin:
         if cookie:
             self.send_header("Set-Cookie", cookie)
         if status == 429:
-            self.send_header("Retry-After", "900")
+            self.send_header("Retry-After", retry_after or "900")
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(raw)
@@ -475,7 +769,7 @@ class AdminRequestMixin:
         if parsed.scheme not in ("https", "http") or parsed.netloc.lower() != self.headers.get("Host", "").lower() or parsed.path or parsed.query or parsed.fragment:
             raise ApiError(403, "invalid_origin", "请求来源不受允许。")
 
-    def _body(self):
+    def _body(self, *, max_bytes: int | None = None):
         if self.headers.get("Transfer-Encoding"):
             raise ApiError(400, "unsupported_transfer", "不支持此上传方式。")
         try:
@@ -484,8 +778,10 @@ class AdminRequestMixin:
             size = -1
         if size < 0:
             raise ApiError(411, "length_required", "请求缺少长度。")
-        if size > MAX_BODY:
+        if size > MAX_BODY or (max_bytes is not None and size > max_bytes):
             self.close_connection = True
+            if max_bytes is not None and size <= MAX_BODY:
+                raise ApiError(413, "request_too_large", "请求体超过允许大小。")
             raise ApiError(413, "request_too_large", "每次上传总计不能超过 60 MiB。")
         self.connection.settimeout(30)
         try:
@@ -497,11 +793,11 @@ class AdminRequestMixin:
             raise ApiError(400, "incomplete_request", "上传未完成，请重试。")
         return raw
 
-    def _json_body(self):
+    def _json_body(self, *, max_bytes: int = 64 * 1024):
         if self.headers.get_content_type() != "application/json":
             raise ApiError(415, "json_required", "请求须为 JSON。")
-        raw = self._body()
-        if len(raw) > 64 * 1024:
+        raw = self._body(max_bytes=max_bytes)
+        if len(raw) > max_bytes:
             raise ApiError(413, "request_too_large", "内容字段过长。")
         try:
             data = json.loads(raw)
@@ -543,12 +839,55 @@ class AdminRequestMixin:
                     raise ApiError(400, "invalid_text", "文字须为 UTF-8。") from None
         return fields, images
 
+    def _bearer_token(self) -> str | None:
+        header = self.headers.get("Authorization", "")
+        prefix = "Bearer "
+        if not isinstance(header, str) or len(header) > MAX_INGEST_KEY + len(prefix) or not header.startswith(prefix):
+            return None
+        token = header[len(prefix):]
+        if not token or any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in token):
+            return None
+        return token
+
+    def _ingest_news(self, store: AdminStore) -> None:
+        if self.command != "POST":
+            raise ApiError(405, "method_not_allowed", "此接口仅接受提交。")
+        limiter = getattr(self.server, "ingest_limiter", None)
+        if limiter is None:
+            limiter = IngestLimiter()
+            self.server.ingest_limiter = limiter
+        identity = str(self.headers.get("CF-Connecting-IP") or self.client_address[0])[:100]
+        if not limiter.allow(identity):
+            raise ApiError(429, "ingest_rate_limited", "提交过于频繁，请稍后再试。")
+        expected = resolve_ingest_key()
+        if not expected:
+            raise ApiError(404, "not_found", "接口不存在。")
+        provided = self._bearer_token()
+        # Compare before reading the body so a wrong key does not need the payload,
+        # but still after the rate limit so guesses are capped. The key is not logged.
+        if provided is None or not _keys_equal(provided, expected):
+            self.close_connection = True
+            raise ApiError(401, "invalid_ingest_key", "提交密钥无效。")
+        data = self._json_body(max_bytes=MAX_INGEST_BODY)
+        if any(key != "items" for key in data):
+            raise ApiError(400, "unknown_field", "请求只接受 items 数组。")
+        self._api_json(200, store.ingest_news(data.get("items")))
+
     def handle_admin_request(self):
         path = urlsplit(self.path).path
-        if not (path == "/api/content" or path.startswith("/api/admin/") or path == "/api/admin"):
+        if path == "/api/ingest/news":
+            try:
+                opened = resolve_ingest_key() is not None
+            except ApiError:
+                opened = True
+            if not opened:
+                return False
+        if not (path == "/api/content" or path.startswith("/api/admin/") or path == "/api/admin" or path == "/api/ingest/news"):
             return False
         try:
-            if self.command not in ("GET", "HEAD"):
+            # Ingest uses its own limiter so a submitting bot cannot consume
+            # the administrator write budget, and the reverse is also true.
+            if self.command not in ("GET", "HEAD") and path != "/api/ingest/news":
                 limiter = getattr(self.server, "request_limiter", None)
                 if limiter is not None:
                     identity = self.headers.get("CF-Connecting-IP") or self.client_address[0]
@@ -559,7 +898,8 @@ class AdminRequestMixin:
             # Close rejected uploads so unread request bodies cannot become a new request.
             if self.command not in ("GET", "HEAD"):
                 self.close_connection = True
-            self._api_json(error.status, {"error": error.code, "message": error.message})
+            retry_after = "600" if error.code == "ingest_rate_limited" else None
+            self._api_json(error.status, {"error": error.code, "message": error.message}, retry_after=retry_after)
         except Exception:
             self.close_connection = True
             self.log_error("Administration request failed (%s)", path)
@@ -569,6 +909,9 @@ class AdminRequestMixin:
     def _handle_admin_api(self, path):
         store = self.server.admin_store
         method, token = self.command, self._token()
+        if path == "/api/ingest/news":
+            self._ingest_news(store)
+            return
         if path == "/api/content":
             if method not in ("GET", "HEAD"):
                 raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
@@ -621,6 +964,22 @@ class AdminRequestMixin:
             else:
                 fields, images = self._multipart()
             self._api_json(200, {"item": store.save_content(user["id"], fields, images, content_match.group(1))})
+            return
+        if path == "/api/admin/news" and method in ("GET", "HEAD"):
+            pairs = parse_qsl(urlsplit(self.path).query, keep_blank_values=True)
+            if len(pairs) > 1 or any(key != "status" for key, _ in pairs):
+                raise ApiError(400, "invalid_query", "查询参数不正确。")
+            status = pairs[0][1] if pairs else None
+            if status == "":
+                status = None
+            self._api_json(200, {"items": store.list_news(status)})
+            return
+        news_match = re.fullmatch(r"/api/admin/news/(news-[0-9]{8}-[a-f0-9]{12})/(publish|reject)", path)
+        if news_match and method == "POST":
+            if self._json_body():
+                raise ApiError(400, "unknown_field", "审核请求不接受额外字段。")
+            action = "publish" if news_match.group(2) == "publish" else "reject"
+            self._api_json(200, {"item": store.review_news(user["id"], news_match.group(1), action)})
             return
         if path == "/api/admin/users" or path.startswith("/api/admin/users/"):
             if user["role"] != "admin":

@@ -21,7 +21,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from admin_backend import AdminRequestMixin, AdminStore
+from admin_backend import AdminRequestMixin, AdminStore, IngestLimiter
 
 
 _reader_spec = importlib.util.spec_from_file_location(
@@ -311,6 +311,7 @@ def main() -> None:
     server.allowed_hosts = {host.lower().split(":", 1)[0].strip("[]") for host in args.allowed_host}
     server.admin_store = AdminStore(args.data_directory, Path(root) / "content-seed.json")
     server.request_limiter = MutationRateLimiter()
+    server.ingest_limiter = IngestLimiter()
     server.admin_store.secure_cookies = not args.insecure_cookie
     print(f"Serving {root} on http://{args.host}:{args.port}", flush=True)
     try:

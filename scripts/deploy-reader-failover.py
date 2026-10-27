@@ -120,7 +120,19 @@ class Links(HTMLParser):
             if key.lower().startswith("on"):
                 raise ValueError("event handler in snapshot")
             if key in ("href", "src") and value:
-                self.references.append((tag, value))
+                self.references.append((tag, key, value))
+
+
+def external_citation(reference):
+    """http(s) source links on text-news pages. Everything else stays internal."""
+    if not isinstance(reference, str) or not reference or len(reference) > 500:
+        return False
+    if reference.startswith("//") or "\\" in reference or any(ch.isspace() or ord(ch) < 32 for ch in reference):
+        return False
+    url = urllib.parse.urlsplit(reference)
+    if url.scheme not in ("http", "https") or not url.hostname or url.username or url.password:
+        return False
+    return True
 
 
 def validate_snapshot(folder):
@@ -153,8 +165,10 @@ def validate_snapshot(folder):
         if name.endswith(".html"):
             links = Links()
             links.feed(content.decode("utf-8"))
-            for tag, reference in links.references:
+            for tag, attr, reference in links.references:
                 if tag == "base" and reference == "/reader/":
+                    continue
+                if tag == "a" and attr == "href" and external_citation(reference):
                     continue
                 if reference.startswith("//"):
                     raise ValueError("external snapshot reference")

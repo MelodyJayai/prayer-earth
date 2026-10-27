@@ -4,7 +4,8 @@ import { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PageHeader } from "../components/PageHeader";
 import { PrayerCard } from "../components/PrayerCard";
-import { importedContentItems, type ImportedContentItem } from "../contentData";
+import { importedContentItems } from "../contentData";
+import { isTextNewsItem, type FeedItem } from "../services/contentFeed";
 import type { AppTab, Prayer } from "../domain/types";
 import { useMinuteClock } from "../hooks/useMinuteClock";
 import { colors } from "../theme";
@@ -13,7 +14,7 @@ import { formatToday } from "../utils/formatters";
 type Props = {
   wide: boolean;
   prayers: Prayer[];
-  contentItems?: ImportedContentItem[];
+  contentItems?: FeedItem[];
   onPray: (id: string) => void;
   onOpen: (id: string) => void;
   onTab: (tab: AppTab) => void;
@@ -30,6 +31,7 @@ export const HomeScreen = memo(function HomeScreen({
   const now = useMinuteClock();
   const morningCount = contentItems.filter((item) => item.channel === "晨修").length;
   const missionCount = contentItems.filter((item) => item.channel === "宣教动态与见证").length;
+  const newsCount = contentItems.filter((item) => isTextNewsItem(item)).length;
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -102,7 +104,7 @@ export const HomeScreen = memo(function HomeScreen({
         <View style={styles.contentTeaserCopy}>
           <Text style={styles.contentTeaserTitle}>晨修 · 宣教动态与见证</Text>
           <Text style={styles.contentTeaserBody}>
-            共 {morningCount} 条晨修、{missionCount} 条宣教动态图片，按日期持续更新。
+            共 {morningCount} 条晨修、{missionCount} 条宣教动态图片{newsCount > 0 ? `，${newsCount} 条宗教动态` : ""}，按日期持续更新。
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.muted} />

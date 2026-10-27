@@ -2,10 +2,10 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Platform } from "react-native";
 import { importedContentItems } from "../contentData";
-import { fetchContentFeed } from "../services/contentFeed";
+import { fetchContentFeed, type FeedItem } from "../services/contentFeed";
 
 type FeedSnapshot = {
-  items: typeof importedContentItems;
+  items: FeedItem[];
   hasChecked: boolean;
   refreshing: boolean;
   error: string | null;

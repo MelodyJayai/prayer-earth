@@ -28,6 +28,36 @@ class ReaderTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", detail)
         self.assertNotIn("<script>", detail)
 
+    def test_text_news_renders_summary_source_and_unverified_flag(self):
+        item = {
+            "id": "news-20261027-0123456789ab", "kind": "news", "date": "2026-10-27", "channel": "宗教动态",
+            "title": "周报 <script>alert(1)</script>", "summary": "只有短摘要", "excerpt": "只有短摘要",
+            "sourceName": "教会通讯", "sourceUrl": "https://example.com/church?q=1",
+            "region": "全球", "verified": False, "category": "基督教",
+        }
+        listing = reader.render_feed_reader("/reader/news.html", [item, self.item])
+        self.assertIn("news-20261027-0123456789ab.html", listing)
+        self.assertIn("待核实", listing)
+        self.assertIn("只有短摘要", listing)
+        self.assertNotIn("morning-daily-001", listing)
+        detail = reader.render_feed_reader("/reader/news-20261027-0123456789ab.html", [item])
+        self.assertIn('rel="noopener noreferrer"', detail)
+        self.assertIn('target="_blank"', detail)
+        self.assertIn("https://example.com/church?q=1", detail)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", detail)
+        self.assertNotIn("<script>", detail)
+        self.assertNotIn("<img", detail)
+        morning = reader.render_feed_reader("/reader/morning.html", [item, self.item])
+        self.assertIn("morning-daily-001", morning)
+        self.assertNotIn("news-20261027", morning)
+        verified = dict(item, verified=True, title="已核实标题")
+        safe = reader.render_feed_reader("/reader/news.html", [verified])
+        self.assertNotIn("待核实", safe)
+        blocked = dict(item, sourceUrl="javascript:alert(1)")
+        rendered = reader.render_feed_reader("/reader/news-20261027-0123456789ab.html", [blocked])
+        self.assertNotIn("javascript:", rendered)
+        self.assertIn("教会通讯", rendered)
+
     def test_removed_content_and_unknown_routes_are_not_rendered(self):
         self.assertIsNone(reader.render_feed_reader("/reader/morning-daily-001.html", []))
         self.assertIsNone(reader.render_feed_reader("/reader/../admin.html", [self.item]))
