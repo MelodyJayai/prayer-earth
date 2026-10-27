@@ -69,8 +69,9 @@
     .card-excerpt { color:var(--soft); font-size:13px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin:7px 0; }
     .card-actions { display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; }
     .badge { display:inline-block; font-size:11px; border-radius:7px; padding:2px 7px; background:#e9f1eb; color:#326048; vertical-align:middle; }
-    .badge.draft { background:#fff4da; color:#856417; }
+    .badge.draft, .badge.pending { background:#fff4da; color:#856417; }
     .badge.archived { background:#eef0ee; color:#64736c; }
+    .badge.rejected { background:var(--red-soft); color:var(--red); }
     .badge.disabled { background:var(--red-soft); color:var(--red); }
     .empty { text-align:center; padding:34px 18px; color:var(--soft); font-size:14px; }
     .image-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-top:14px; }
@@ -142,6 +143,7 @@
     <nav class="tabs" aria-label="管理功能" role="tablist">
       <button id="tab-compose" class="tab" role="tab" aria-selected="true" aria-controls="view-compose" data-view="compose">发布内容</button>
       <button id="tab-library" class="tab" role="tab" aria-selected="false" aria-controls="view-library" data-view="library">内容管理</button>
+      <button id="tab-news" class="tab" role="tab" aria-selected="false" aria-controls="view-news" data-view="news">宗教动态</button>
       <button id="tab-users" class="tab" role="tab" aria-selected="false" aria-controls="view-users" data-view="users" hidden>同工账号</button>
     </nav>
     <section id="view-compose" class="panel" role="tabpanel" aria-labelledby="tab-compose">
@@ -177,6 +179,15 @@
       <div id="content-list" class="list"></div>
       <div class="row" style="justify-content:center;margin-top:17px"><button id="load-more" class="btn secondary" hidden>显示更多</button></div>
     </section>
+    <section id="view-news" role="tabpanel" aria-labelledby="tab-news" hidden>
+      <div class="panel"><div class="row between"><div><h1>宗教动态审核</h1><div id="news-count" class="muted">正在加载…</div></div><button id="refresh-news" class="btn small secondary" type="button">刷新</button></div>
+        <p class="muted">外部提交的基督教、宗教宣教与教会动态先进入待审。公开后才会出现在主应用和备用阅读站。待审和驳回不会公开，也不会改内容版本。</p>
+        <div class="filters">
+          <div><label for="news-filter-status">状态</label><select id="news-filter-status"><option value="pending">待审</option><option value="published">已公开</option><option value="rejected">已驳回</option><option value="">全部</option></select></div>
+        </div>
+      </div>
+      <div id="news-list" class="list"></div>
+    </section>
     <section id="view-users" role="tabpanel" aria-labelledby="tab-users" hidden>
       <div class="panel"><h1>同工账号</h1><p class="muted">为每位同工建立独立账号。编辑同工可以发布和维护内容；管理员还可以授权和管理账号。</p>
         <form id="create-user-form">
@@ -195,9 +206,10 @@
 <script>
 (function () {
   'use strict';
-  var state = { user:null, csrf:'', items:[], users:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false };
+  var state = { user:null, csrf:'', items:[], users:[], news:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false };
   var $ = function (id) { return document.getElementById(id); };
   var labels = { draft:'草稿', published:'已发布', archived:'已归档' };
+  var newsLabels = { pending:'待审', published:'已公开', rejected:'已驳回' };
   function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function dateToday() { var d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function channelName(value) { return value === 'morning' || value === '晨修' ? '晨修' : '宣教动态与见证'; }
@@ -205,7 +217,7 @@
   function message(text, kind) { $('message').textContent=text; $('message').className='notice message '+(kind || ''); $('message').hidden=!text; }
   function errorMessage(data, fallback) { if(data && data.message) return data.message; if(data && data.error && data.error.message) return data.error.message; if(data && typeof data.error === 'string') return data.error; return fallback; }
   function loginRequired(note) {
-    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.contentLoaded=false; state.usersLoaded=false;
+    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false;
     resetEditor(); $('app').hidden=true; $('password-panel').hidden=true; $('boot').hidden=true; $('logout').hidden=true; $('login-panel').hidden=false;
     $('password-form').reset(); $('create-user-form').reset(); if(note) message(note,'error');
   }
@@ -233,8 +245,8 @@
   function showPassword(required) { $('app').hidden=true; $('password-panel').hidden=false; $('password-back').hidden=required; $('password-title').textContent=required ? '设置自己的密码' : '修改登录密码'; $('password-intro').textContent=required ? '首次登录或管理员重置密码后，请先更换临时密码，再发布内容。' : '更换后请使用新密码登录，并妥善保存。'; $('password-form').reset(); }
   function showView(view) {
     state.view=view;
-    ['compose','library','users'].forEach(function(name) { $('view-'+name).hidden=name !== view; $('tab-'+name).setAttribute('aria-selected',String(name === view)); });
-    if(view === 'library' && !state.contentLoaded) loadContent(); if(view === 'users' && !state.usersLoaded) loadUsers();
+    ['compose','library','users','news'].forEach(function(name) { $('view-'+name).hidden=name !== view; $('tab-'+name).setAttribute('aria-selected',String(name === view)); });
+    if(view === 'library' && !state.contentLoaded) loadContent(); if(view === 'users' && !state.usersLoaded) loadUsers(); if(view === 'news' && !state.newsLoaded) loadNews();
   }
   function lockForm(form, busy, label) { Array.prototype.forEach.call(form.querySelectorAll('button,input,select,textarea'),function(control){ control.disabled=busy; }); form.setAttribute('aria-busy',String(busy)); if(label) message(label); }
   function clearSelected() { state.selected.forEach(function(file){URL.revokeObjectURL(file.url);}); state.selected=[]; $('content-images').value=''; renderSelected(); }
@@ -283,6 +295,33 @@
       return '<article class="content-card"><div class="card-top">'+img+'<div class="card-copy"><div class="muted">'+escapeHtml(item.date)+' · '+escapeHtml(channelName(item.channel))+' <span class="badge '+status+'">'+escapeHtml(labels[status] || status)+'</span></div><h3 class="card-title">'+escapeHtml(title)+'</h3><div class="muted">'+segments.length+' 张图片</div></div></div>'+(item.excerpt ? '<p class="card-excerpt">'+escapeHtml(item.excerpt)+'</p>' : '')+'<div class="card-actions"><button class="btn small secondary" data-content-action="edit" data-id="'+escapeHtml(item.id)+'">编辑内容</button>'+(status === 'published' ? '<a class="btn small quiet" target="_blank" rel="noopener" href="/reader/'+encodeURIComponent(item.id)+'.html">查看发布 ↗</a>' : '')+(status === 'archived' ? '<button class="btn small secondary" data-content-action="restore" data-id="'+escapeHtml(item.id)+'">恢复为草稿</button>' : '<button class="btn small danger" data-content-action="archive" data-id="'+escapeHtml(item.id)+'">归档下架</button>')+'</div></article>';
     }).join('') || '<div class="panel empty">没有符合条件的内容。可以调整筛选或发布新内容。</div>';
   }
+  function safeNewsUrl(value) { return typeof value === 'string' && /^https?:\/\//.test(value) && value.indexOf(' ') === -1 && value.indexOf('\\') === -1 && value.length <= 500; }
+  async function loadNews() {
+    $('news-list').innerHTML='<div class="panel empty">正在加载动态…</div>'; $('refresh-news').disabled=true;
+    var status=$('news-filter-status').value;
+    try { var data=await request('/news'+(status ? '?status='+encodeURIComponent(status) : '')); state.news=data.items || []; state.newsLoaded=true; renderNews(); }
+    catch(error) { $('news-list').innerHTML='<div class="panel empty">动态加载失败，请点击刷新重试。</div>'; message(error.message,'error'); }
+    finally { $('refresh-news').disabled=false; }
+  }
+  function renderNews() {
+    $('news-count').textContent='当前 '+state.news.length+' 条';
+    $('news-list').innerHTML=state.news.map(function(item){
+      var status=item.status || 'pending';
+      var unverified=item.verified === false ? ' <span class="badge pending">待核实</span>' : '';
+      var source=safeNewsUrl(item.sourceUrl) ? '<a href="'+escapeHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(item.sourceName || '来源')+'</a>' : escapeHtml(item.sourceName || '来源');
+      var actions='';
+      if(status !== 'published') actions+='<button class="btn small" data-news-action="publish" data-id="'+escapeHtml(item.id)+'">公开</button>';
+      if(status !== 'rejected') actions+='<button class="btn small danger" data-news-action="reject" data-id="'+escapeHtml(item.id)+'">驳回</button>';
+      if(status === 'published') actions+='<a class="btn small quiet" target="_blank" rel="noopener" href="/reader/'+encodeURIComponent(item.id)+'.html">查看发布 ↗</a>';
+      return '<article class="content-card"><div class="card-copy"><div class="muted">'+escapeHtml(item.date)+' · '+escapeHtml(item.category || '宗教动态')+' · '+escapeHtml(item.region || '')+' <span class="badge '+status+'">'+escapeHtml(newsLabels[status] || status)+'</span>'+unverified+'</div><h3 class="card-title">'+escapeHtml(item.title)+'</h3><p class="card-excerpt">'+escapeHtml(item.summary || item.excerpt || '')+'</p><div class="muted">来源：'+source+'</div></div><div class="card-actions">'+actions+'</div></article>';
+    }).join('') || '<div class="panel empty">没有符合条件的动态。</div>';
+  }
+  async function reviewNews(item, action, button) {
+    if(!window.confirm(action === 'publish' ? '公开后，这条动态会出现在主应用和备用阅读站，并更新内容版本。确定公开吗？' : '驳回后，这条动态不会出现在公开页面。确定驳回吗？')) return;
+    button.disabled=true;
+    try { await request('/news/'+encodeURIComponent(item.id)+'/'+action,{method:'POST',body:{}}); state.newsLoaded=false; await loadNews(); message(action === 'publish' ? '动态已公开。' : '动态已驳回。','success'); }
+    catch(error) { message(error.message,'error'); button.disabled=false; }
+  }
   function editContent(item) {
     resetEditor(); state.editing=item; $('content-date').value=item.date; $('content-channel').value=channelName(item.channel) === '晨修' ? 'morning' : 'mission'; $('content-title').value=item.title || ''; $('content-excerpt').value=item.excerpt || ''; $('editor-heading').textContent='编辑内容'; $('editor-description').textContent='当前状态：'+(labels[statusOf(item)] || statusOf(item))+'。可更新文字，或选择新图片整组替换。'; $('new-content').hidden=false; $('publish-content').textContent=statusOf(item) === 'published' ? '保存并保持发布' : '发布内容'; $('images-label').innerHTML='替换为新图片 <span class="muted">（选填，可多选）</span>';
     var images=(item.segments || []).filter(function(segment){return !!segment.uri;}); $('existing-images-wrap').hidden=!images.length; $('existing-images').innerHTML=images.map(function(image,index){return '<div class="image-card"><a href="'+escapeHtml(image.uri)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+escapeHtml(image.uri)+'" alt="当前第 '+(index+1)+' 张图片"></a><div class="image-index">第 '+(index+1)+' 张</div></div>';}).join(''); showView('compose'); message(''); window.scrollTo(0,0);
@@ -316,6 +355,9 @@
   ['filter-channel','filter-status','filter-query'].forEach(function(id){$(id).addEventListener(id === 'filter-query' ? 'input' : 'change',function(){state.limit=30;renderContent();});});
   $('load-more').addEventListener('click',function(){state.limit+=30;renderContent();});
   $('content-list').addEventListener('click',function(event){var button=event.target.closest('[data-content-action]');if(!button)return;var item=state.items.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return;var action=button.getAttribute('data-content-action');if(action === 'edit')editContent(item);else updateStatus(item,action === 'archive' ? 'archived' : 'draft',button);});
+  $('refresh-news').addEventListener('click',function(){message(''); state.newsLoaded=false; loadNews();});
+  $('news-filter-status').addEventListener('change',function(){state.newsLoaded=false; loadNews();});
+  $('news-list').addEventListener('click',function(event){var button=event.target.closest('[data-news-action]');if(!button)return;var item=state.news.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return; reviewNews(item,button.getAttribute('data-news-action'),button);});
   $('create-user-form').addEventListener('submit',async function(event){event.preventDefault();var form=this;lockForm(form,true);try{await request('/users',{method:'POST',body:{username:$('new-username').value.trim(),password:$('new-user-password').value,role:$('new-role').value}});form.reset();state.usersLoaded=false;await loadUsers();message('同工账号已创建。请将管理入口、账号和临时密码单独发送给该同工。','success');}catch(error){message(error.message,'error');}finally{lockForm(form,false);}});
   $('refresh-users').addEventListener('click',function(){message('');loadUsers();});
   $('users-list').addEventListener('click',async function(event){var button=event.target.closest('[data-user-action]');if(!button)return;var user=state.users.find(function(user){return String(user.id) === button.getAttribute('data-id');});if(!user)return;var action=button.getAttribute('data-user-action');var form=Array.prototype.find.call($('users-list').querySelectorAll('[data-reset-id]'),function(form){return form.getAttribute('data-reset-id') === String(user.id);});if(action === 'reset' || action === 'cancel'){form.hidden=action === 'cancel';if(!form.hidden)form.querySelector('input').focus();else form.reset();return;}var active=user.active !== false && user.active !== 0;if(!window.confirm((active ? '禁用 '+user.username+' 后，该同工将无法继续登录和操作。' : '确认重新启用 '+user.username+' 的账号？')))return;button.disabled=true;try{await request('/users/'+encodeURIComponent(user.id),{method:'PATCH',body:{active:!active}});await loadUsers();message(active ? '账号已禁用。' : '账号已启用。','success');}catch(error){message(error.message,'error');button.disabled=false;}});

@@ -14,6 +14,7 @@ import json
 import shutil
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -69,8 +70,23 @@ def page(title: str, body: str, *, description: str = "祷告地球同工试用�
 """
 
 
+def is_news_item(item: dict) -> bool:
+    return item.get("kind") == "news" or item.get("channel") == "宗教动态"
+
+
+def safe_http_url(value: object) -> str | None:
+    if not isinstance(value, str) or not value or len(value) > 500:
+        return None
+    if any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in value) or "\\" in value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.username or parts.password:
+        return None
+    return value
+
+
 def nav(active: str) -> str:
-    links = [("全部", "index.html"), ("晨修", "morning.html"), ("宣教动态与见证", "mission.html")]
+    links = [("全部", "index.html"), ("晨修", "morning.html"), ("宣教动态与见证", "mission.html"), ("宗教动态", "news.html")]
     return "<nav>" + "".join(
         f'<a class="{"active" if key == active else ""}" href="{href}">{esc(key)}</a>'
         for key, href in links
@@ -92,12 +108,32 @@ def resolve_segment(dist: Path, channel: str, file_name: str) -> Path:
 def card(item: dict[str, object]) -> str:
     item_id = str(item["id"])
     title = str(item.get("title") or f'{item.get("channel", "内容")} · {item.get("date", "")}')
+    if is_news_item(item):
+        excerpt = str(item.get("excerpt") or item.get("summary") or "")
+        flag = "" if item.get("verified") is True else " · 待核实"
+        source = str(item.get("sourceName") or item.get("source_name") or "")
+        return f'''<a class="card" href="{esc(item_id)}.html">
+  <div class="card-title">{esc(title)}</div>
+  <div class="card-meta">{esc(item.get("date", ""))} · 宗教动态{esc(flag)}</div>
+  <div class="card-copy">{esc(excerpt)}</div>
+  <div class="card-meta">来源：{esc(source)}</div>
+</a>'''
     excerpt = str(item.get("excerpt") or f'点击打开完整图片内容（共 {len(item.get("segments", []))} 段）')
     return f'''<a class="card" href="{esc(item_id)}.html">
   <div class="card-title">{esc(title)}</div>
   <div class="card-meta">{esc(item["date"])} · {esc(item["channel"])}</div>
   <div class="card-copy">{esc(excerpt)}</div>
 </a>'''
+
+
+def news_source_html(item: dict[str, object]) -> str:
+    name = esc(item.get("sourceName") or item.get("source_name") or "来源")
+    url = safe_http_url(item.get("sourceUrl") or item.get("source_url"))
+    if not url:
+        return f'<p class="source">来源：{name}</p>'
+    return (
+        f'<p class="source">来源：<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{name}</a></p>'
+    )
 
 
 def render_feed_reader(path: str, items: list[dict[str, object]], *, include_admin: bool = True) -> str | None:
@@ -124,8 +160,8 @@ def render_feed_reader(path: str, items: list[dict[str, object]], *, include_adm
     if include_admin:
         footer += ' · <a href="/admin">管理员入口</a>'
     footer += '</footer>'
-    intro = '<div class="notice">按日期阅读同工发布的晨修与宣教图片。新发布的内容会显示在最前面。</div>'
-    list_channels = {"index.html": "全部", "morning.html": "晨修", "mission.html": "宣教动态与见证"}
+    intro = '<div class="notice">按日期阅读同工发布的晨修与宣教图片。宗教动态只显示标题、短摘要和来源，不转载全文。新发布的内容会显示在最前面。</div>'
+    list_channels = {"index.html": "全部", "morning.html": "晨修", "mission.html": "宣教动态与见证", "news.html": "宗教动态"}
     if name in list_channels:
         active = list_channels[name]
         visible = ordered if active == "全部" else [item for item in ordered if item.get("channel") == active]
@@ -134,7 +170,8 @@ def render_feed_reader(path: str, items: list[dict[str, object]], *, include_adm
         if active == "全部":
             morning_count = sum(1 for item in ordered if item.get("channel") == "晨修")
             mission_count = sum(1 for item in ordered if item.get("channel") == "宣教动态与见证")
-            counts += f' · 晨修 {morning_count} 条 · 宣教动态与见证 {mission_count} 条'
+            news_count = sum(1 for item in ordered if is_news_item(item))
+            counts += f' · 晨修 {morning_count} 条 · 宣教动态与见证 {mission_count} 条 · 宗教动态 {news_count} 条'
         body = (header + nav(active) + intro + f'<h1>{esc(title)}</h1><div class="muted">{esc(counts)}</div>'
                 + f'<div class="list">{"".join(card(item) for item in visible)}</div>' + footer)
         return page(title, body)
@@ -144,6 +181,20 @@ def render_feed_reader(path: str, items: list[dict[str, object]], *, include_adm
     channel = str(item["channel"])
     date = str(item["date"])
     title = str(item.get("title") or f"{channel} · {date}")
+    if is_news_item(item):
+        summary = str(item.get("summary") or item.get("excerpt") or "")
+        region = str(item.get("region") or "")
+        verified = item.get("verified") is True
+        flag = "" if verified else " · 待核实"
+        notice = "以下为短摘要，不转载全文。请查看来源。" if verified else "待核实：这是短摘要，请打开来源核对原文。"
+        region_html = f" · {esc(region)}" if region else ""
+        body = (header
+                + '<a class="back" href="news.html">← 返回宗教动态</a>'
+                + f'<h1>{esc(title)}</h1><div class="muted">{esc(date)}{region_html}{esc(flag)}</div>'
+                + f'<div class="notice">{esc(notice)}</div>'
+                + f'<article class="article"><div class="source">{esc(summary)}</div>{news_source_html(item)}</article>'
+                + footer)
+        return page(title, body, description="宗教动态短摘要")
     image_tags: list[str] = []
     for segment in item.get("segments", []):
         if not isinstance(segment, dict):
@@ -198,7 +249,7 @@ def write_reader(dist: Path, manifest: dict[str, object]) -> int:
         shutil.rmtree(root)
     root.mkdir(parents=True)
     items = seed["items"]
-    names = ["index.html", "morning.html", "mission.html"] + [f'{item["id"]}.html' for item in items]
+    names = ["index.html", "morning.html", "mission.html", "news.html"] + [f'{item["id"]}.html' for item in items]
     for name in names:
         rendered = render_feed_reader(name, items)
         if rendered is None:

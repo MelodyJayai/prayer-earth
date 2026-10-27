@@ -11,6 +11,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from PIL import Image
 
 from scripts.admin_backend import AdminStore
+_PUBLISHER_SPEC = importlib.util.spec_from_file_location("reader_publisher", Path(__file__).with_name("deploy-reader-failover.py"))
+assert _PUBLISHER_SPEC and _PUBLISHER_SPEC.loader
+_PUBLISHER = importlib.util.module_from_spec(_PUBLISHER_SPEC)
+_PUBLISHER_SPEC.loader.exec_module(_PUBLISHER)
 _SNAPSHOT_SPEC = importlib.util.spec_from_file_location("generate_static_snapshot", Path(__file__).with_name("generate-static-snapshot.py"))
 assert _SNAPSHOT_SPEC and _SNAPSHOT_SPEC.loader
 _SNAPSHOT = importlib.util.module_from_spec(_SNAPSHOT_SPEC)
@@ -79,6 +83,56 @@ class ResilienceToolTests(unittest.TestCase):
             self.assertEqual(updated["counts"]["all"], 0)
             self.assertFalse((second / "reader" / "daily-001.html").exists())
             self.assertFalse((second / "media" / "daily.jpg").exists())
+
+    def test_pending_news_does_not_change_snapshot_until_publish(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            site, data = root / "site", root / "data"
+            site.mkdir()
+            store = AdminStore(data, secure_cookies=False)
+            hidden = root / "pending"
+            build_snapshot(data_dir=data, site_root=site, output=hidden)
+            version = json.loads((hidden / "health.json").read_text(encoding="utf-8"))["contentVersion"]
+            inserted = store.ingest_news([{
+                "title": "待审教会动态 <script>",
+                "summary": "还不能公开的短摘要",
+                "source_url": "https://example.com/church/pending",
+                "source_name": "教会通讯",
+                "published_at": "2026-10-27T08:00:00Z",
+                "region": "全球",
+                "verified": False,
+                "category": "教会",
+            }])
+            pending = root / "still-hidden"
+            manifest = build_snapshot(data_dir=data, site_root=site, output=pending)
+            page = (pending / "reader" / "news.html").read_text(encoding="utf-8")
+            self.assertEqual(manifest["contentVersion"], version)
+            self.assertEqual(manifest["counts"]["news"], 0)
+            self.assertNotIn("待审教会动态", page)
+            self.assertNotIn("/api/content", page)
+            self.assertFalse((pending / "admin").exists())
+            store.review_news("editor", inserted["inserted"][0], "publish")
+            published = root / "published"
+            visible = build_snapshot(data_dir=data, site_root=site, output=published)
+            detail = published / "reader" / f"{inserted['inserted'][0]}.html"
+            text = detail.read_text(encoding="utf-8")
+            self.assertEqual(visible["contentVersion"], version + 1)
+            self.assertEqual(visible["counts"]["news"], 1)
+            self.assertEqual(visible["counts"]["morning"], 0)
+            self.assertIn("待核实", text)
+            self.assertIn('rel="noopener noreferrer"', text)
+            self.assertIn("https://example.com/church/pending", text)
+            self.assertIn("&lt;script&gt;", text)
+            self.assertNotIn("<script>", text)
+            self.assertNotIn("待审教会动态", (published / "reader" / "morning.html").read_text(encoding="utf-8"))
+            self.assertNotIn("管理员入口", (published / "index.html").read_text(encoding="utf-8"))
+            _PUBLISHER.validate_snapshot(published)
+            store.review_news("editor", inserted["inserted"][0], "reject")
+            rejected = root / "rejected"
+            after_reject = build_snapshot(data_dir=data, site_root=site, output=rejected)
+            self.assertEqual(after_reject["counts"]["news"], 0)
+            self.assertFalse((rejected / "reader" / f"{inserted['inserted'][0]}.html").exists())
+            self.assertEqual(after_reject["contentVersion"], version + 2)
 
     def test_backup_uses_sqlite_snapshot_and_rotates(self):
         with tempfile.TemporaryDirectory() as folder:

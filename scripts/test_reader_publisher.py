@@ -20,6 +20,38 @@ class PublisherTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 publisher.safe_path(name)
         self.assertEqual(str(publisher.safe_path("media/upload/daily.jpg")), "media/upload/daily.jpg")
+        self.assertEqual(str(publisher.safe_path("reader/news.html")), "reader/news.html")
+        self.assertEqual(str(publisher.safe_path("reader/news-20261027-0123456789ab.html")), "reader/news-20261027-0123456789ab.html")
+
+    def test_news_source_links_stay_https_and_admin_paths_stay_blocked(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            pages = {
+                "index.html": '<!doctype html><head><base href="/reader/"></head><body><a href="index.html">全部</a></body>',
+                "reader/index.html": '<!doctype html><body><a href="morning.html">晨修</a><a href="mission.html">宣教</a><a href="news.html">动态</a><a href="/">首页</a></body>',
+                "reader/morning.html": '<!doctype html><body><a href="index.html">全部</a></body>',
+                "reader/mission.html": '<!doctype html><body><a href="index.html">全部</a></body>',
+                "reader/news.html": '<!doctype html><body><a href="index.html">全部</a><a href="https://church.example/a" target="_blank" rel="noopener noreferrer">来源</a></body>',
+            }
+            files = {}
+            for name, text in pages.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                data = text.encode()
+                path.write_bytes(data)
+                files[name] = publisher.digest(data)
+            manifest = {"schema": 1, "contentVersion": 3, "generatedAt": "2026-10-27T00:00:00+00:00",
+                        "counts": {"all": 0, "morning": 0, "mission": 0, "news": 0}, "files": files}
+            (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            health = {"ok": True, "contentVersion": 3, "generatedAt": manifest["generatedAt"], "counts": manifest["counts"]}
+            (root / "health.json").write_text(json.dumps(health), encoding="utf-8")
+            self.assertEqual(publisher.validate_snapshot(root)["contentVersion"], 3)
+            news = root / "reader" / "news.html"
+            news.write_text(pages["reader/news.html"].replace("https://church.example/a", "javascript:alert(1)"), encoding="utf-8")
+            files["reader/news.html"] = publisher.digest(news.read_bytes())
+            (root / "manifest.json").write_text(json.dumps({**manifest, "files": files}), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                publisher.validate_snapshot(root)
 
     def test_archive_rejects_links_before_writing(self):
         with tempfile.TemporaryDirectory() as folder:

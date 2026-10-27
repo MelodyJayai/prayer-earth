@@ -2,17 +2,49 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { memo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import type { ImportedContentItem } from "../contentData";
+import { SourceLink } from "../components/NewsItemCard";
+import { isTextNewsItem, newsVerificationLabel, type FeedItem } from "../services/contentFeed";
 import { colors } from "../theme";
 
 export const ContentDetailScreen = memo(function ContentDetailScreen({
   item,
   onBack,
 }: {
-  item: ImportedContentItem;
+  item: FeedItem;
   onBack: () => void;
 }) {
   const [failed, setFailed] = useState(false);
+  if (isTextNewsItem(item)) {
+    const unverified = newsVerificationLabel(item.verified);
+    return (
+      <View style={styles.screen}>
+        <View style={styles.header}>
+          <Pressable accessibilityRole="button" accessibilityLabel="返回" onPress={onBack} style={styles.back}>
+            <Ionicons name="arrow-back" size={22} color={colors.ink} />
+          </Pressable>
+          <View style={styles.headerCopy}>
+            <Text style={styles.headerTitle}>宗教动态</Text>
+            <Text style={styles.headerDate}>{item.date}</Text>
+          </View>
+        </View>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.notice}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.green} />
+            <Text style={styles.noticeText}>
+              {unverified ? "待核实：这里只保留短摘要，请打开来源核对原文。" : "这里只保留短摘要，不转载全文。请查看来源。"}
+            </Text>
+          </View>
+          <Text style={styles.newsTitle}>{item.title}</Text>
+          <Text style={styles.newsMeta}>{item.region} · {item.category}{unverified ? " · 待核实" : ""}</Text>
+          <Text style={styles.newsSummary}>{item.summary}</Text>
+          <View style={styles.sourceRow}>
+            <Text style={styles.newsMeta}>来源：</Text>
+            <SourceLink href={item.sourceUrl}>{item.sourceName}</SourceLink>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -66,4 +98,8 @@ const styles = StyleSheet.create({
   failed: { height: 220, borderRadius: 14, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", gap: 10 },
   failedText: { color: colors.inkSoft, fontSize: 13 },
   sourceFile: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 12 },
+  newsTitle: { color: colors.ink, fontSize: 22, fontWeight: "800", lineHeight: 30 },
+  newsMeta: { color: colors.inkSoft, fontSize: 13, marginTop: 6 },
+  newsSummary: { color: colors.ink, fontSize: 16, lineHeight: 26, marginTop: 14 },
+  sourceRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", marginTop: 16 },
 });
