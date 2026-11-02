@@ -111,14 +111,61 @@ openssl rand -hex 32
 
 因此待审提交不会增加内容 `version`，也不会改变快照文件哈希。备用站签名覆盖内容文件哈希和内容版本，不覆盖 `health.json` 的 `generatedAt`。待审阶段签名不变，发布任务会核对后跳过部署。
 
-同工登录后，在「宗教动态」里公开或驳回。这两个动作沿用管理接口的会话 cookie、`X-CSRF-Token` 和同源检查；编辑同工和管理员都可以审核，但必须先改掉临时密码。
+同工登录后，在「宗教动态」里公开或驳回。这两个动作沿用管理接口的会话 cookie、`X-CSRF-Token` 和同源检查；编辑同工和管理员都可以审核，但必须先改掉临时密码。写请求仍走原来的管理员写限流。
 
 - 待审 → 公开：写入公开列表，`version` 加 1
 - 待审 → 驳回：仍不公开，`version` 不变
 - 已公开 → 驳回：从公开列表移除，`version` 加 1
 - 重复执行同一动作：不重复加版本
 
-公开后的下一次快照会多出文字页和来源链接，文件哈希与 `version` 一起变化，签名变化，备用站发布任务会部署新快照。来源链接只允许 `http`/`https`。阅读页把文本做 HTML 转义，链接使用 `target="_blank"` 和 `rel="noopener noreferrer"`。
+`GET /api/admin/news` 在 `items` 之外多一个 `publishable`：当前 `status=pending` 且 `verified` 为 JSON 布尔值 `true` 的条数。字符串 `"false"` / `"true"`、数字、缺失字段都不算。列表筛选不会改变这个数字。
+
+### 一键公开已核实
+
+页面按钮是「一键公开已核实」。`publishable` 为 0 时按钮禁用，并提示没有已核实的待审动态。大于 0 时按钮写上条数。点击后先向服务端再取一次条数，确认框里显示将要公开的条数；取消则不提交。确认后才调用下面的接口，并把该条数作为 `expected_count`。
+
+`POST /api/admin/news/publish-verified`
+
+需要已登录的会话 cookie、`X-CSRF-Token`、与单条审核相同的同源检查。临时密码状态下返回 `password_change_required`，不会改数据。编辑同工和管理员都可以调用。
+
+```json
+{ "expected_count": 51 }
+```
+
+`expected_count` 可以不传。传了就必须是非负整数，且等于当时严格可公开的条数。JSON 布尔值 `true`/`false` 不算整数。多出来的字段会被拒绝。
+
+只处理同时满足这两点的行：`status` 是 `pending`，且存下来的 `verified` 解析后是布尔值 `true`。`verified` 为 `false`、字符串 `"false"` 或 `"true"`、数字、缺失、坏掉的 JSON，以及 `rejected`、已经 `published` 的行，都保持原样。
+
+成功时 HTTP 200。有可公开条目时，在同一个数据库事务里把这些行改成 `published`，内容 `version` 只加 1（不论条数多少），并写一条审计。没有可公开条目时不增加 `version`，仍然写一条 `published` 为 0 的审计。
+
+```json
+{ "published": 51, "version": 12 }
+```
+
+审计的 `action` 是 `publish_verified_news`，`actor` 是操作人 id，`detail` 是 `{ "published": 51, "ids": ["news-..."] }`。条数对不上时返回 409，不改任何行、不加版本、不写这条审计：
+
+```json
+{
+  "error": "count_mismatch",
+  "message": "待公开条数已变为 50，请重新确认。",
+  "actual": 50
+}
+```
+
+页面收到 409 后用 `actual` 再确认一次。第二次仍不一致时，只显示错误，不会公开一部分。事务中途失败也会整批回滚。
+
+| HTTP | `error` | 含义 |
+| --- | --- | --- |
+| 200 |  | 已按服务端实际条数处理。`published` 为 0 时版本不变 |
+| 400 | `unknown_field` / `invalid_expected_count` | 多余字段，或期望条数不是非负整数 |
+| 401 | `authentication_required` | 未登录 |
+| 403 | `invalid_csrf` / `invalid_origin` / `password_change_required` | 与其他管理写接口相同 |
+| 409 | `count_mismatch` | `expected_count` 与实际可公开条数不一致。响应里的 `actual` 是实际条数 |
+| 429 | `write_rate_limited` | 管理员写请求过于频繁 |
+
+公开后的下一次快照会多出文字页和来源链接，文件哈希与 `version` 一起变化，签名变化，备用站发布任务会部署新快照。一键公开 N 条（N > 0）也只加 1 次版本、产生一次新签名，不会按条数连加。N 为 0 时快照签名不变，备用站不会因此发布。来源链接只允许 `http`/`https`。阅读页把文本做 HTML 转义，链接使用 `target="_blank"` 和 `rel="noopener noreferrer"`。
+
+公开错了没有批量撤回。在「宗教动态」里对已公开条目逐条点「驳回」。每一条从已公开变为驳回都会再把 `version` 加 1，备用站会再发一版，该条从主应用和备用阅读站消失。其余已公开条目不受影响。
 
 备用站 Worker 没有改。`/admin`、`/api/content` 仍然不是静态文件，请求落到 Worker 后继续是 404；其他方法继续是 405。发布脚本只放行文字动态上的外链来源，不放行 `javascript:`、协议相对链接或脚本。`/admin` 和 `api/content` 也仍然不能作为快照路径。
 
@@ -136,7 +183,7 @@ Web 仍先读 `/api/content`，失败时继续使用随包图片。原生端不�
 npm run typecheck
 npm run lint
 npm test
-python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher
+python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher scripts.test_import_wechat_source
 npm run build:web
 ```
 
@@ -170,6 +217,8 @@ curl -s http://127.0.0.1:18080/api/content
 - 用错误密钥、非宗教分类、超长摘要和 `javascript:` 链接各试一次，确认被拒绝且没有入库。
 - 待审时记下 `/api/content` 的 `version` 和备用站 `health.json` 的 `contentVersion`。两者都不应因为这次提交而增加。
 - 公开一条之后，`version` 增加，主站阅读页和稍后的备用站都能看到摘要与来源，待审和驳回的仍不可见。
+- 一键公开前记下 `GET /api/admin/news` 的 `publishable`，以及 `/api/content` 的 `version`。确认框里的条数应与 `publishable` 一致。只点一次并确认后，`version` 只加 1；`verified` 不是布尔值 `true` 的待审、已驳回和原先已公开的条目状态不变。条数为 0 时按钮不可用，直接调用接口也不会增加 `version`。
+- 若要撤回，在后台对不该公开的条目逐条驳回，并确认每驳回一条 `version` 再加 1、该条从公开列表消失。
 - 备用站上 `/admin` 与 `/api/content` 仍是 404，POST 仍是 405。
 - 发布机上的 `deploy-reader-failover.py` 要先于第一条带外链的动态更新。旧校验器会拒绝外部来源链接，失败时会保留上一份完整快照。
 - 现有图片库（`assets/content`、`docs/content-import-manifest.json`、`src/contentData.ts`）不应有改动。

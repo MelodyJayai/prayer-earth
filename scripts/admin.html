@@ -180,8 +180,8 @@
       <div class="row" style="justify-content:center;margin-top:17px"><button id="load-more" class="btn secondary" hidden>显示更多</button></div>
     </section>
     <section id="view-news" role="tabpanel" aria-labelledby="tab-news" hidden>
-      <div class="panel"><div class="row between"><div><h1>宗教动态审核</h1><div id="news-count" class="muted">正在加载…</div></div><button id="refresh-news" class="btn small secondary" type="button">刷新</button></div>
-        <p class="muted">外部提交的基督教、宗教宣教与教会动态先进入待审。公开后才会出现在主应用和备用阅读站。待审和驳回不会公开，也不会改内容版本。</p>
+      <div class="panel"><div class="row between"><div><h1>宗教动态审核</h1><div id="news-count" class="muted">正在加载…</div></div><div class="row"><button id="publish-verified" class="btn small" type="button" disabled title="没有已核实的待审动态">一键公开已核实</button><button id="refresh-news" class="btn small secondary" type="button">刷新</button></div></div>
+        <p class="muted">外部提交的基督教、宗教宣教与教会动态先进入待审。公开后才会出现在主应用和备用阅读站。待审和驳回不会公开，也不会改内容版本。只公开已核实的待审：可逐条公开，或使用「一键公开已核实」。一次一键公开只把内容版本加 1。未核实、已驳回和已公开的都不会被这颗按钮改动。公开错了可再逐条驳回。</p>
         <div class="filters">
           <div><label for="news-filter-status">状态</label><select id="news-filter-status"><option value="pending">待审</option><option value="published">已公开</option><option value="rejected">已驳回</option><option value="">全部</option></select></div>
         </div>
@@ -206,7 +206,7 @@
 <script>
 (function () {
   'use strict';
-  var state = { user:null, csrf:'', items:[], users:[], news:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false };
+  var state = { user:null, csrf:'', items:[], users:[], news:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false, publishingNews:false, publishable:0 };
   var $ = function (id) { return document.getElementById(id); };
   var labels = { draft:'草稿', published:'已发布', archived:'已归档' };
   var newsLabels = { pending:'待审', published:'已公开', rejected:'已驳回' };
@@ -216,8 +216,9 @@
   function statusOf(item) { return item.status || 'published'; }
   function message(text, kind) { $('message').textContent=text; $('message').className='notice message '+(kind || ''); $('message').hidden=!text; }
   function errorMessage(data, fallback) { if(data && data.message) return data.message; if(data && data.error && data.error.message) return data.error.message; if(data && typeof data.error === 'string') return data.error; return fallback; }
+  function failedRequest(data, fallback, status) { var failure=new Error(errorMessage(data, fallback)); failure.status=status; if(data && typeof data.error === 'string') failure.code=data.error; if(data && typeof data.actual === 'number' && isFinite(data.actual)) failure.actual=data.actual; return failure; }
   function loginRequired(note) {
-    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false;
+    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false; state.publishingNews=false; state.publishable=0;
     resetEditor(); $('app').hidden=true; $('password-panel').hidden=true; $('boot').hidden=true; $('logout').hidden=true; $('login-panel').hidden=false;
     $('password-form').reset(); $('create-user-form').reset(); if(note) message(note,'error');
   }
@@ -230,8 +231,8 @@
     catch(error) { throw new Error(error.name === 'AbortError' ? '请求等待时间较长，请检查网络后重试。' : '暂时无法连接服务器，请检查网络后重试。'); }
     finally { clearTimeout(timeout); }
     var data; try { data=await response.json(); } catch(error) { data={}; }
-    if(response.status === 401 && path !== '/login') { loginRequired('登录已过期，请重新登录。未保存的内容需要重新填写。'); throw new Error('登录已过期，请重新登录。'); }
-    if(!response.ok) throw new Error(errorMessage(data,'操作未完成，请稍后重试。'));
+    if(response.status === 401 && path !== '/login') { loginRequired('登录已过期，请重新登录。未保存的内容需要重新填写。'); throw failedRequest({message:'登录已过期，请重新登录。'}, '登录已过期，请重新登录。', response.status); }
+    if(!response.ok) throw failedRequest(data, '操作未完成，请稍后重试。', response.status);
     return data;
   }
   function acceptSession(data) { state.user=data.user; state.csrf=data.csrfToken || state.csrf; }
@@ -296,15 +297,82 @@
     }).join('') || '<div class="panel empty">没有符合条件的内容。可以调整筛选或发布新内容。</div>';
   }
   function safeNewsUrl(value) { return typeof value === 'string' && /^https?:\/\//.test(value) && value.indexOf(' ') === -1 && value.indexOf('\\') === -1 && value.length <= 500; }
+  /* publish-verified-ui */
+  function countPublishableNews(items) {
+    var count = 0;
+    if (!items || !items.length) return 0;
+    for (var index = 0; index < items.length; index += 1) {
+      var item = items[index];
+      if (item && item.status === 'pending' && item.verified === true) count += 1;
+    }
+    return count;
+  }
+  function publishVerifiedConfirmText(count) {
+    return '将公开 ' + count + ' 条已核实且仍在待审的宗教动态。公开后会出现在主应用和备用阅读站，内容版本加 1，备用站快照签名会变化并随之发布。确定公开吗？';
+  }
+  function publishVerifiedButtonState(count) {
+    var ready = count > 0;
+    return {
+      disabled: !ready,
+      label: ready ? '一键公开已核实（' + count + '）' : '一键公开已核实',
+      title: ready ? '公开 ' + count + ' 条已核实的待审动态' : '没有已核实的待审动态'
+    };
+  }
+  function publishVerifiedDecision(count, confirmed) {
+    if (!(count > 0)) return { action: 'empty', expectedCount: 0 };
+    if (!confirmed) return { action: 'cancel', expectedCount: count };
+    return { action: 'post', expectedCount: count };
+  }
+  /* /publish-verified-ui */
+  function renderPublishVerified(count) {
+    state.publishable = count;
+    var button = $('publish-verified');
+    var view = publishVerifiedButtonState(count);
+    button.disabled = !!state.publishingNews || view.disabled;
+    button.textContent = view.label;
+    button.title = view.title;
+  }
   async function loadNews() {
-    $('news-list').innerHTML='<div class="panel empty">正在加载动态…</div>'; $('refresh-news').disabled=true;
+    $('news-list').innerHTML='<div class="panel empty">正在加载动态…</div>'; $('refresh-news').disabled=true; $('publish-verified').disabled=true;
     var status=$('news-filter-status').value;
-    try { var data=await request('/news'+(status ? '?status='+encodeURIComponent(status) : '')); state.news=data.items || []; state.newsLoaded=true; renderNews(); }
-    catch(error) { $('news-list').innerHTML='<div class="panel empty">动态加载失败，请点击刷新重试。</div>'; message(error.message,'error'); }
-    finally { $('refresh-news').disabled=false; }
+    try {
+      var data=await request('/news'+(status ? '?status='+encodeURIComponent(status) : ''));
+      state.news=data.items || []; state.newsLoaded=true;
+      renderPublishVerified(typeof data.publishable === 'number' ? data.publishable : countPublishableNews(state.news));
+      renderNews();
+    }
+    catch(error) { $('news-list').innerHTML='<div class="panel empty">动态加载失败，请点击刷新重试。</div>'; message(error.message,'error'); renderPublishVerified(0); }
+    finally { $('refresh-news').disabled=false; if(!state.publishingNews) renderPublishVerified(state.publishable || 0); }
+  }
+  async function publishVerifiedNews() {
+    if(state.publishingNews) return;
+    state.publishingNews=true; $('publish-verified').disabled=true;
+    try {
+      var preview=await request('/news?status=pending');
+      var count=typeof preview.publishable === 'number' ? preview.publishable : countPublishableNews(preview.items);
+      renderPublishVerified(count);
+      var decision=publishVerifiedDecision(count, count > 0 && window.confirm(publishVerifiedConfirmText(count)));
+      if(decision.action === 'empty') { message('没有已核实的待审动态可以公开。','error'); return; }
+      if(decision.action === 'cancel') return;
+      var result;
+      try { result=await request('/news/publish-verified',{method:'POST',body:{expected_count:decision.expectedCount}}); }
+      catch(error) {
+        if(error.status !== 409 || typeof error.actual !== 'number') throw error;
+        renderPublishVerified(error.actual);
+        var retry=publishVerifiedDecision(error.actual, error.actual > 0 && window.confirm('待公开条数已变为 '+error.actual+' 条。'+publishVerifiedConfirmText(error.actual)));
+        if(retry.action === 'empty') { message('待公开条数已变化，现在没有已核实的待审动态。','error'); return; }
+        if(retry.action === 'cancel') return;
+        result=await request('/news/publish-verified',{method:'POST',body:{expected_count:retry.expectedCount}});
+      }
+      state.newsLoaded=false; await loadNews();
+      if(result.published > 0) message('已公开 '+result.published+' 条已核实动态。内容版本现为 '+result.version+'。','success');
+      else message('没有可公开的已核实动态，内容版本未改变。','error');
+    } catch(error) { message(error.message,'error'); }
+    finally { state.publishingNews=false; renderPublishVerified(typeof state.publishable === 'number' ? state.publishable : 0); }
   }
   function renderNews() {
-    $('news-count').textContent='当前 '+state.news.length+' 条';
+    var publishable=state.publishable || 0;
+    $('news-count').textContent='当前 '+state.news.length+' 条'+(publishable > 0 ? ' · 已核实待审 '+publishable+' 条可一键公开' : ' · 没有已核实的待审动态');
     $('news-list').innerHTML=state.news.map(function(item){
       var status=item.status || 'pending';
       var unverified=item.verified === false ? ' <span class="badge pending">待核实</span>' : '';
@@ -356,6 +424,7 @@
   $('load-more').addEventListener('click',function(){state.limit+=30;renderContent();});
   $('content-list').addEventListener('click',function(event){var button=event.target.closest('[data-content-action]');if(!button)return;var item=state.items.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return;var action=button.getAttribute('data-content-action');if(action === 'edit')editContent(item);else updateStatus(item,action === 'archive' ? 'archived' : 'draft',button);});
   $('refresh-news').addEventListener('click',function(){message(''); state.newsLoaded=false; loadNews();});
+  $('publish-verified').addEventListener('click',function(){message(''); publishVerifiedNews();});
   $('news-filter-status').addEventListener('change',function(){state.newsLoaded=false; loadNews();});
   $('news-list').addEventListener('click',function(event){var button=event.target.closest('[data-news-action]');if(!button)return;var item=state.news.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return; reviewNews(item,button.getAttribute('data-news-action'),button);});
   $('create-user-form').addEventListener('submit',async function(event){event.preventDefault();var form=this;lockForm(form,true);try{await request('/users',{method:'POST',body:{username:$('new-username').value.trim(),password:$('new-user-password').value,role:$('new-role').value}});form.reset();state.usersLoaded=false;await loadUsers();message('同工账号已创建。请将管理入口、账号和临时密码单独发送给该同工。','success');}catch(error){message(error.message,'error');}finally{lockForm(form,false);}});
