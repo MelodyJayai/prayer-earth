@@ -9,6 +9,7 @@ import http.client
 import io
 import json
 import os
+import sqlite3
 import tempfile
 import threading
 import unittest
@@ -314,6 +315,251 @@ class NewsIngestTests(unittest.TestCase):
         finally:
             httpd.shutdown()
             httpd.server_close()
+
+    def _actor(self):
+        self.store.bootstrap("admin", "temporary-pass-1")
+        token, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
+        session = self.store.change_password(login["user"]["id"], "temporary-pass-1", "permanent-pass-1", token)
+        return token, session
+
+    def _version(self):
+        return self.store.content()["version"]
+
+    def _statuses(self):
+        with self.store._db() as db:
+            return {row["id"]: row["status"] for row in db.execute("SELECT id, status FROM news")}
+
+    def _insert_news(self, news_id, verified, status="pending"):
+        data = {
+            "id": news_id,
+            "title": "原始动态",
+            "summary": "短摘要",
+            "source_url": "https://example.com/" + news_id,
+            "source_name": "来源",
+            "published_at": "2026-10-27T08:00:00Z",
+            "date": "2026-10-27",
+            "region": "全球",
+            "category": "基督教",
+            "channel": "宗教动态",
+        }
+        if verified is not _OMITTED:
+            data["verified"] = verified
+        raw = verified if isinstance(verified, str) and verified.startswith("{") else json.dumps(data, ensure_ascii=False)
+        with self.store._db() as db:
+            db.execute(
+                "INSERT INTO news(id,data,status,created_at,updated_at) VALUES (?,?,?,?,?)",
+                (news_id, raw, status, "t0", "t0"),
+            )
+
+    def test_publish_verified_publishes_only_pending_json_true_and_bumps_once(self):
+        _token, session = self._actor()
+        actor = session["user"]["id"]
+        created = self.store.ingest_news([
+            news_payload(verified=True, source_url="https://example.com/verified-1", title="已核实一"),
+            news_payload(verified=True, source_url="https://example.com/verified-2", title="已核实二"),
+            news_payload(verified=True, source_url="https://example.com/verified-3", title="已核实三"),
+            news_payload(verified=False, source_url="https://example.com/unverified"),
+            news_payload(verified=True, source_url="https://example.com/reject-me"),
+            news_payload(verified=False, source_url="https://example.com/already-public"),
+            news_payload(verified=True, source_url="https://example.com/already-verified-public"),
+        ])
+        inserted = created["inserted"]
+        verified_ids = inserted[:3]
+        unverified_id, rejected_id, public_false_id, public_true_id = inserted[3:]
+        self.store.review_news(actor, rejected_id, "reject")
+        self.store.review_news(actor, public_false_id, "publish")
+        self.store.review_news(actor, public_true_id, "publish")
+        version_before = self._version()
+        strict_rows = {
+            "news-20261027-aaaaaaaaaaa1": "false",
+            "news-20261027-aaaaaaaaaaa2": "true",
+            "news-20261027-aaaaaaaaaaa3": 1,
+            "news-20261027-aaaaaaaaaaa4": _OMITTED,
+            "news-20261027-aaaaaaaaaaa5": False,
+        }
+        for news_id, verified in strict_rows.items():
+            self._insert_news(news_id, verified)
+        self._insert_news("news-20261027-aaaaaaaaaaa6", True, status="rejected")
+        listing = self.store.news_listing("pending")
+        self.assertEqual(listing["publishable"], 3)
+        verified_flags = {item["id"]: item["verified"] for item in listing["items"]}
+        self.assertIs(verified_flags["news-20261027-aaaaaaaaaaa1"], False)
+        self.assertIs(verified_flags["news-20261027-aaaaaaaaaaa2"], False)
+        self.assertIs(verified_flags["news-20261027-aaaaaaaaaaa4"], False)
+        self.assertIs(verified_flags[verified_ids[0]], True)
+        self._insert_news("news-20261027-aaaaaaaaaaa7", "{not-json")
+        with self.assertRaises(ApiError) as mismatch:
+            self.store.publish_verified_news(actor, expected_count=2)
+        self.assertEqual(mismatch.exception.status, 409)
+        self.assertEqual(mismatch.exception.extra["actual"], 3)
+        self.assertEqual(self._version(), version_before)
+        self.assertEqual(self._statuses()[unverified_id], "pending")
+        with self.store._db() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM audit WHERE action='publish_verified_news'").fetchone())
+
+        result = self.store.publish_verified_news(actor, expected_count=3)
+        self.assertEqual(result, {"published": 3, "version": version_before + 1})
+        statuses = self._statuses()
+        for news_id in verified_ids:
+            self.assertEqual(statuses[news_id], "published")
+        for news_id in (unverified_id, *strict_rows, "news-20261027-aaaaaaaaaaa7"):
+            self.assertEqual(statuses[news_id], "pending", news_id)
+        self.assertEqual(statuses[rejected_id], "rejected")
+        self.assertEqual(statuses["news-20261027-aaaaaaaaaaa6"], "rejected")
+        self.assertEqual(statuses[public_false_id], "published")
+        self.assertEqual(statuses[public_true_id], "published")
+        public_ids = {item["id"] for item in self.store.content(public=True)["items"]}
+        self.assertTrue(set(verified_ids) <= public_ids)
+        self.assertIn(public_false_id, public_ids)
+        self.assertNotIn(unverified_id, public_ids)
+        self.assertNotIn(rejected_id, public_ids)
+        self.assertNotIn("news-20261027-aaaaaaaaaaa1", public_ids)
+        again = self.store.publish_verified_news(actor, expected_count=0)
+        self.assertEqual(again, {"published": 0, "version": result["version"]})
+        with self.store._db() as db:
+            rows = db.execute(
+                "SELECT actor, detail FROM audit WHERE action='publish_verified_news' ORDER BY id"
+            ).fetchall()
+        self.assertEqual(len(rows), 2)
+        first = json.loads(rows[0]["detail"])
+        self.assertEqual(rows[0]["actor"], actor)
+        self.assertEqual(first["published"], 3)
+        self.assertEqual(first["ids"], sorted(verified_ids))
+        self.assertEqual(json.loads(rows[1]["detail"])["published"], 0)
+        self.store.review_news(actor, verified_ids[0], "reject")
+        after_reject = self.store.content(public=True)
+        self.assertEqual(after_reject["version"], result["version"] + 1)
+        self.assertNotIn(verified_ids[0], {item["id"] for item in after_reject["items"]})
+
+    def test_publish_verified_empty_set_does_not_bump_version(self):
+        _token, session = self._actor()
+        self.store.ingest_news([news_payload(verified=False, source_url="https://example.com/only-unverified")])
+        self._insert_news("news-20261027-bbbbbbbbbbb1", "false", status="rejected")
+        before = self._version()
+        result = self.store.publish_verified_news(session["user"]["id"])
+        self.assertEqual(result, {"published": 0, "version": before})
+        self.assertEqual(self._version(), before)
+        self.assertTrue(all(status != "published" for status in self._statuses().values()))
+
+    def test_publish_verified_rolls_back_when_a_later_row_fails(self):
+        _token, session = self._actor()
+        created = self.store.ingest_news([
+            news_payload(verified=True, source_url="https://example.com/atomic-1"),
+            news_payload(verified=True, source_url="https://example.com/atomic-2"),
+            news_payload(verified=False, source_url="https://example.com/atomic-untouched"),
+        ])
+        before = self._version()
+        with self.store._db() as db:
+            db.execute("""
+                CREATE TRIGGER news_publish_fail_second
+                BEFORE UPDATE ON news
+                WHEN NEW.status = 'published' AND (SELECT COUNT(*) FROM news WHERE status = 'published') >= 1
+                BEGIN
+                  SELECT RAISE(ABORT, 'simulated failure');
+                END
+            """)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.store.publish_verified_news(session["user"]["id"], expected_count=2)
+        self.assertEqual(self._statuses()[created["inserted"][0]], "pending")
+        self.assertEqual(self._statuses()[created["inserted"][1]], "pending")
+        self.assertEqual(self._statuses()[created["inserted"][2]], "pending")
+        self.assertEqual(self._version(), before)
+        with self.store._db() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM audit WHERE action='publish_verified_news'").fetchone())
+            self.assertEqual(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0], before)
+
+    def test_http_publish_verified_requires_session_csrf_and_uses_expected_count(self):
+        created = self.store.ingest_news([
+            news_payload(verified=True, source_url="https://example.com/http-1"),
+            news_payload(verified=True, source_url="https://example.com/http-2"),
+            news_payload(verified=False, source_url="https://example.com/http-unverified"),
+        ])
+        verified_ids = created["inserted"][:2]
+        unverified_id = created["inserted"][2]
+        httpd = start_server(self.store)
+        port = httpd.server_address[1]
+        origin = f"http://127.0.0.1:{port}"
+        try:
+            status, denied = request(port, "POST", "/api/admin/news/publish-verified", {})
+            self.assertEqual(status, 401)
+            self.assertEqual(json.loads(denied)["error"], "authentication_required")
+            self.store.bootstrap("admin", "temporary-pass-1")
+            token, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
+            temporary = {
+                "Origin": origin,
+                "Cookie": "prayer_admin_session=" + token,
+                "X-CSRF-Token": login["csrfToken"],
+            }
+            status, blocked = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2}, temporary)
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(blocked)["error"], "password_change_required")
+            self.assertTrue(all(item["status"] == "pending" for item in self.store.list_news()))
+            session = self.store.change_password(login["user"]["id"], "temporary-pass-1", "permanent-pass-1", token)
+            headers = {
+                "Origin": origin,
+                "Cookie": "prayer_admin_session=" + token,
+                "X-CSRF-Token": session["csrfToken"],
+            }
+            status, _ = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2}, dict(headers, Origin="https://evil.example"))
+            self.assertEqual(status, 403)
+            missing_csrf = dict(headers)
+            missing_csrf.pop("X-CSRF-Token")
+            status, missing = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2}, missing_csrf)
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(missing)["error"], "invalid_csrf")
+            status, wrong = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2}, dict(headers, **{"X-CSRF-Token": "not-the-token"}))
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(wrong)["error"], "invalid_csrf")
+            status, extra = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2, "force": True}, headers)
+            self.assertEqual(status, 400)
+            self.assertEqual(json.loads(extra)["error"], "unknown_field")
+            status, boolean = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": True}, headers)
+            self.assertEqual(status, 400)
+            self.assertEqual(json.loads(boolean)["error"], "invalid_expected_count")
+            status, listed = request(port, "GET", "/api/admin/news?status=pending", None, headers)
+            self.assertEqual(status, 200)
+            listing = json.loads(listed)
+            self.assertEqual(listing["publishable"], 2)
+            self.assertEqual(sum(1 for item in listing["items"] if item["verified"] is True), 2)
+            version_before = self._version()
+            status, mismatched = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 1}, headers)
+            self.assertEqual(status, 409)
+            mismatch_body = json.loads(mismatched)
+            self.assertEqual(mismatch_body["error"], "count_mismatch")
+            self.assertEqual(mismatch_body["actual"], 2)
+            self.assertEqual(self._version(), version_before)
+            self.assertEqual(self._statuses()[verified_ids[0]], "pending")
+            status, published = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 2}, headers)
+            self.assertEqual(status, 200)
+            body = json.loads(published)
+            self.assertEqual(body["published"], 2)
+            self.assertEqual(body["version"], version_before + 1)
+            self.assertEqual(self._statuses()[verified_ids[0]], "published")
+            self.assertEqual(self._statuses()[verified_ids[1]], "published")
+            self.assertEqual(self._statuses()[unverified_id], "pending")
+            editor = self.store.create_user(login["user"]["id"], {"username": "editor1", "password": "temporary-pass-2", "role": "editor"})
+            editor_token, editor_login = self.store.login("editor1", "temporary-pass-2", "10.0.0.8")
+            self.assertEqual(editor["role"], "editor")
+            status, editor_denied = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 0}, {
+                "Origin": origin, "Cookie": "prayer_admin_session=" + editor_token, "X-CSRF-Token": editor_login["csrfToken"],
+            })
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(editor_denied)["error"], "password_change_required")
+            editor_session = self.store.change_password(editor["id"], "temporary-pass-2", "permanent-pass-2", editor_token)
+            status, editor_published = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 0}, {
+                "Origin": origin,
+                "Cookie": "prayer_admin_session=" + editor_token,
+                "X-CSRF-Token": editor_session["csrfToken"],
+            })
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(editor_published)["published"], 0)
+            self.assertEqual(json.loads(editor_published)["version"], body["version"])
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
+
+_OMITTED = object()
 
 
 if __name__ == "__main__":

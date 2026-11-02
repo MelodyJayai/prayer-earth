@@ -11,7 +11,8 @@ directory MUST be outside the static document root. Seed JSON is an array or
 ``store.bootstrap(username, password)`` creates the first administrator only;
 it returns False once any account exists. It never stores cleartext passwords.
 All Store validation failures raise ApiError(status, code, message). HTTP errors
-have {error, message}. Public and authenticated responses are never cached.
+have {error, message}. A publish-count mismatch also includes ``actual``.
+Public and authenticated responses are never cached.
 """
 from __future__ import annotations
 
@@ -70,8 +71,8 @@ NEWS_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", 
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str):
-        self.status, self.code, self.message = status, code, message
+    def __init__(self, status: int, code: str, message: str, extra: dict | None = None):
+        self.status, self.code, self.message, self.extra = status, code, message, extra or {}
         super().__init__(message)
 
 
@@ -598,7 +599,9 @@ class AdminStore:
             "sourceUrl": data["source_url"],
             "publishedAt": data["published_at"],
             "region": data["region"],
-            "verified": bool(data["verified"]),
+            # Only a real JSON boolean true counts as verified. The string
+            # "false", a missing field, or a numeric 1 must not look verified.
+            "verified": data.get("verified") is True,
             "category": data["category"],
         }
         item["searchText"] = " ".join((
@@ -674,16 +677,6 @@ class AdminStore:
             self._audit(db, "news-ingest", "ingest_news", None, {"inserted": inserted, "ignored": ignored})
         return {"inserted": inserted, "ignored": ignored}
 
-    def list_news(self, status: str | None = None) -> list[dict]:
-        if status is not None and status not in ("pending", "published", "rejected"):
-            raise ApiError(400, "invalid_status", "状态须为 pending、published 或 rejected。")
-        with self._db() as db:
-            if status:
-                rows = db.execute("SELECT * FROM news WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
-            else:
-                rows = db.execute("SELECT * FROM news ORDER BY created_at DESC, id DESC").fetchall()
-            return [self._public_news(json.loads(row["data"]), status=row["status"], updated_at=row["updated_at"]) for row in rows]
-
     def review_news(self, actor: str, news_id: str, action: str) -> dict:
         if action not in ("publish", "reject"):
             raise ApiError(400, "invalid_action", "审核动作须为公开或驳回。")
@@ -705,6 +698,67 @@ class AdminStore:
                     self._bump(db)
             self._audit(db, actor, f"{action}_news", news_id, {"from": previous, "to": target})
             return self._public_news(json.loads(row["data"]), status=target, updated_at=stamp)
+
+    @staticmethod
+    def _publishable_ids(db) -> list[str]:
+        """Pending rows whose stored verified value is JSON true and nothing else."""
+        rows = db.execute("SELECT id, data FROM news WHERE status='pending' ORDER BY id").fetchall()
+        ids: list[str] = []
+        for row in rows:
+            try:
+                data = json.loads(row["data"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if isinstance(data, dict) and data.get("verified") is True:
+                ids.append(row["id"])
+        return ids
+
+    def news_listing(self, status: str | None = None) -> dict:
+        if status is not None and status not in ("pending", "published", "rejected"):
+            raise ApiError(400, "invalid_status", "状态须为 pending、published 或 rejected。")
+        with self._db() as db:
+            if status:
+                rows = db.execute("SELECT * FROM news WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
+            else:
+                rows = db.execute("SELECT * FROM news ORDER BY created_at DESC, id DESC").fetchall()
+            items = [self._public_news(json.loads(row["data"]), status=row["status"], updated_at=row["updated_at"]) for row in rows]
+            return {"items": items, "publishable": len(self._publishable_ids(db))}
+
+    def list_news(self, status: str | None = None) -> list[dict]:
+        return self.news_listing(status)["items"]
+
+    def publish_verified_news(self, actor: str, expected_count: int | None = None) -> dict:
+        """Publish every pending item whose verified flag is JSON true.
+
+        The select, status updates, single version bump, and audit insert share
+        one database transaction. A mismatch or a later failure rolls all of
+        them back. An empty set writes the audit row and leaves version as-is.
+        """
+        if expected_count is not None and (type(expected_count) is not int or expected_count < 0):
+            raise ApiError(400, "invalid_expected_count", "期望条数须为非负整数。")
+        with self._db() as db:
+            ids = self._publishable_ids(db)
+            count = len(ids)
+            if expected_count is not None and expected_count != count:
+                raise ApiError(
+                    409,
+                    "count_mismatch",
+                    f"待公开条数已变为 {count}，请重新确认。",
+                    {"actual": count},
+                )
+            if count:
+                stamp = _now()
+                for news_id in ids:
+                    db.execute(
+                        "UPDATE news SET status='published', updated_at=? WHERE id=? AND status='pending'",
+                        (stamp, news_id),
+                    )
+                    if db.execute("SELECT changes()").fetchone()[0] != 1:
+                        raise ApiError(409, "count_mismatch", "待公开条目在写入时发生变化，请重新确认。")
+                self._bump(db)
+            version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+            self._audit(db, actor, "publish_verified_news", None, {"published": count, "ids": ids})
+            return {"published": count, "version": version}
 
 
 def create_admin_store(data_dir, seed_file=None, **kwargs):
@@ -899,7 +953,11 @@ class AdminRequestMixin:
             if self.command not in ("GET", "HEAD"):
                 self.close_connection = True
             retry_after = "600" if error.code == "ingest_rate_limited" else None
-            self._api_json(error.status, {"error": error.code, "message": error.message}, retry_after=retry_after)
+            payload = {"error": error.code, "message": error.message}
+            for key, value in error.extra.items():
+                if key not in payload:
+                    payload[key] = value
+            self._api_json(error.status, payload, retry_after=retry_after)
         except Exception:
             self.close_connection = True
             self.log_error("Administration request failed (%s)", path)
@@ -972,7 +1030,18 @@ class AdminRequestMixin:
             status = pairs[0][1] if pairs else None
             if status == "":
                 status = None
-            self._api_json(200, {"items": store.list_news(status)})
+            self._api_json(200, store.news_listing(status))
+            return
+        if path == "/api/admin/news/publish-verified" and method == "POST":
+            data = self._json_body()
+            if any(key != "expected_count" for key in data):
+                raise ApiError(400, "unknown_field", "批量公开只接受期望条数。")
+            expected = None
+            if "expected_count" in data:
+                expected = data["expected_count"]
+                if type(expected) is not int or expected < 0:
+                    raise ApiError(400, "invalid_expected_count", "期望条数须为非负整数。")
+            self._api_json(200, store.publish_verified_news(user["id"], expected))
             return
         news_match = re.fullmatch(r"/api/admin/news/(news-[0-9]{8}-[a-f0-9]{12})/(publish|reject)", path)
         if news_match and method == "POST":
