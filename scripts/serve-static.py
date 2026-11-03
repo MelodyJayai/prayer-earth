@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Serve an Expo static export with client-side route fallback.
+"""Serve an Expo static export with a strict client-route fallback.
 
-Expo's static export keeps dynamic routes as placeholders. A small fallback
-server lets direct links such as /content/mission-20261017-090 load index.html,
-then Expo Router resolves the route in the browser.
+Expo's static export does not emit a file for every Expo Router screen.
+Direct visits and refreshes for the whitelist below receive dist/index.html
+with status 200, and the browser router finishes the navigation. Every other
+missing path stays a real 404. API, admin, reader, and static-file handling
+are unchanged.
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ import time
 from functools import lru_cache
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from admin_backend import AdminRequestMixin, AdminStore, IngestLimiter
 
@@ -33,6 +35,29 @@ _reader_spec.loader.exec_module(_reader)
 
 
 COMPRESSIBLE = {".html", ".js", ".css", ".json", ".svg", ".txt"}
+
+# Screens that exist only in the client bundle. One optional trailing slash
+# is accepted; extra segments, suffixes, and dot-paths are not.
+SPA_EXACT_ROUTES = frozenset({
+    "/prayers",
+    "/testimonies",
+    "/profile",
+    "/about",
+    "/compose",
+    "/legal/community",
+    "/legal/privacy",
+})
+_SPA_DYNAMIC_ROUTE = re.compile(r"^/(?:content|prayer)/[A-Za-z0-9][A-Za-z0-9_-]{0,80}$")
+
+
+def is_spa_client_route(path: str) -> bool:
+    """True for a whitelisted Expo Router path, ignoring one trailing slash."""
+    if not path or path.startswith("/.") or "/." in path or "\\" in path:
+        return False
+    normalized = path[:-1] if len(path) > 1 and path.endswith("/") else path
+    if normalized in SPA_EXACT_ROUTES:
+        return True
+    return _SPA_DYNAMIC_ROUTE.fullmatch(normalized) is not None
 
 
 class MutationRateLimiter:
@@ -131,6 +156,20 @@ class SpaHandler(AdminRequestMixin, SimpleHTTPRequestHandler):
             return True
         return False
 
+    def _reject_dot_path(self) -> bool:
+        """Reject dot-segments before the static handler can collapse them.
+
+        ``/content/%2e%2e`` decodes to a path SimpleHTTPRequestHandler treats as
+        the site root and answers with a redirect onto ``index.html``. Encoded
+        or raw dot-segments stay 404, including paths that are not on the SPA
+        whitelist.
+        """
+        path = unquote(urlsplit(self.path).path)
+        if path.startswith("/.") or "/." in path or "\\" in path:
+            self.send_error(404, "Not found")
+            return True
+        return False
+
     def prepare_route(self) -> None:
         path = urlsplit(self.path).path
         candidate = Path(self.directory, path.lstrip("/"))
@@ -140,15 +179,20 @@ class SpaHandler(AdminRequestMixin, SimpleHTTPRequestHandler):
             return
         elif candidate.is_dir() and (candidate / "index.html").is_file():
             self.path = path.rstrip("/") + "/index.html"
-        elif not candidate.exists() and Path(path).suffix == "" and (
-            path.startswith("/content/") or path.startswith("/prayer/")
+        elif (
+            not candidate.exists()
+            and Path(path).suffix == ""
+            and is_spa_client_route(path)
         ):
+            # Hand the browser the SPA shell. The public URL is unchanged.
             self.path = "/index.html"
 
     def do_GET(self) -> None:  # noqa: N802
         if self._reject_bad_host():
             return
         if self._redirect_insecure():
+            return
+        if self._reject_dot_path():
             return
         if self.handle_admin_request():
             return
@@ -161,6 +205,8 @@ class SpaHandler(AdminRequestMixin, SimpleHTTPRequestHandler):
         if self._reject_bad_host():
             return
         if self._redirect_insecure():
+            return
+        if self._reject_dot_path():
             return
         if self.handle_admin_request():
             return

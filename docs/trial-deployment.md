@@ -14,6 +14,29 @@
 
 完整静态备用站：`https://reader.bytelanework.com`，独立于 OCI 源站和 Tunnel，由不同 Cloudflare 账户的 Workers Static Assets 保存全部已发布页面与图片。运维电脑的 `Prayer-Reader-Snapshot-Publish` 任务每 15 分钟同步；2026-10-19 首次任务返回 0，已完成全量页面和图片哈希验证。发布日志、失败处理与边界见 `docs/reader-failover.md`。
 
+## Expo Router 直链（SPA 白名单回退）
+
+`npm run build:web` 的 `dist` 只有一份应用入口 `index.html`。Expo Router 的这些页面在磁盘上没有对应文件，所以以前直接打开 `https://prayer.diagport.com/prayers` 会 404。`scripts/serve-static.py` 现在只在 GET 和 HEAD、并且站点目录里没有同名文件时，把下面这些路径改写成 `index.html`，状态码仍是 200。浏览器地址栏不变，由前端路由接着打开对应页面。
+
+- `/prayers`、`/testimonies`、`/profile`、`/about`、`/compose`
+- `/legal/community`、`/legal/privacy`
+- `/content/<id>`、`/prayer/<id>`：`id` 只有一层，首字符为字母或数字，其余只能是字母、数字、下划线和连字符，最长 81 个字符
+
+路径末尾多一个 `/` 同样算命中。查询字符串不参与判断。若该路径本身是已存在的文件，或是带 `index.html` 的目录，仍返回那个真实文件，不改写成入口。
+
+这不是全站回退。下面的请求保持原来的结果：
+
+- `/api/*`，包括 `/api/content` 和不存在的 `/api/...`
+- `/admin` 以及管理接口
+- `/reader` 与 `/reader/*`（未知阅读页仍是 404）
+- 不存在的静态资源，以及任何不在白名单里的路径
+- 点文件，以及原始或百分号编码后含 `/.`、`..` 的路径（避免被静态处理器折回站点根目录）
+- POST、PUT、PATCH（祷告页面的这些方法仍是 404，不会返回入口 HTML）
+
+安全响应头、HTML 的 `Cache-Control: no-cache`、带内容哈希的静态文件长期缓存，都按改写之后实际发送的文件计算，规则本身没有放宽。
+
+部署脚本仍会把远端 `/opt/prayer-earth-trial/site` 整目录换成新的 `dist`，并删掉刚换下的 `site.previous`。上线前先把当前 `site` 另存备份，再把旧目录里有、新包里没有的图片并进新目录，然后才切换。内容数据库在 `data/`，不在这次被替换的 `site` 里。
+
 ## 2026-10-18 Error 1033 修复
 
 同工截图显示 Cloudflare Error 1033。排查确认网页和隧道两个服务均为 `disabled`、`inactive`，Cloudflare 报隧道 `inactive`、连接数 0。此前部署的最后一步 SSH 启动命令未成功完成，上传文件不等于站点已就绪。

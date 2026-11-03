@@ -17,13 +17,13 @@
 - 应用版本在 `package.json` 与 `app.json` 中都是 `1.1.0`。技术栈与 README 一致：Expo `~57.0.31`、React Native `0.86.3`、React `19.2.3`、Expo Router、TypeScript `strict`。
 - iOS `buildNumber` 与 Android `versionCode` 均为 `2`。Bundle ID / Package Name 仍是 `org.prayerearth.app`。`app.json` 没有 `extra.eas.projectId`。`eas.json` 只有 development / preview / production 构建档，`submit.production` 为空对象。
 - 公开仓库创建于 2026-10-22，默认分支 `main`，无 license，无 tag，无其他分支。GitHub issue 与 pull request 均为空。可追溯历史只有上述一次导入提交，更早的开发过程不在这个远程仓库里。
-- CI 只有 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)：向 `main` / `master` 推送或打开 PR 时，在 Node.js 24 与 Python 3.14 上执行 typecheck、ESLint、Vitest、四份 Python unittest、`expo-doctor` 和 `npm run build:web`。导入提交对应的 [Actions run 39719383762](https://github.com/MelodyJayai/prayer-earth/actions/runs/39719383762) 结论为 success（约 1 分 35 秒）。仓库内没有部署 workflow。
+- CI 只有 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)：向 `main` / `master` 推送或打开 PR 时，在 Node.js 24 与 Python 3.14 上执行 typecheck、ESLint、Vitest、Python unittest、`expo-doctor` 和 `npm run build:web`。导入提交对应的 [Actions run 39719383762](https://github.com/MelodyJayai/prayer-earth/actions/runs/39719383762) 结论为 success（约 1 分 35 秒）。仓库内没有部署 workflow。当前 unittest 含 `test_admin_backend`、`test_generate_reader`、`test_resilience_tools`、`test_reader_publisher`、`test_import_wechat_source` 和 `test_serve_static`。
 
 ### 两套产品叠在同一个客户端里
 
 | 表面 | 用户实际看到的 | 数据从哪来 |
 | --- | --- | --- |
-| 首页、祷告列表、祷告详情、发布 | 4 条种子祷告 + 本机发布 | `src/data.ts` 与 AsyncStorage。远程开关默认关闭 |
+| 首页、祷告列表、祷告详情、发布 | 4 条种子祷告 + 本机发布，页面标明「演示数据·未联网」 | `src/data.ts` 与 AsyncStorage。远程开关默认关闭。首页顶部有「全球祷告」入口，跳到 `/prayers` |
 | 底部「见证」 | 晨修与宣教图片库，不是种子见证 | Web 优先读 `/api/content`，失败则用随包 `src/contentData.ts`；原生只读随包数据 |
 | 「我的 → 管理员入口」 | 跳到 `/admin`（Web）或 `https://prayer.diagport.com/admin`（原生） | 内容管理后台，不是祷告审核台 |
 
@@ -45,12 +45,15 @@
 - `RemotePrayerRepository` 已按契约封装列表、详情、创建、祷告动作、删除、举报和 `POST /v1/outbox/batch`。启动同步只拉一页（`limit: 50`），没有翻页、下拉刷新或增量游标循环。匿名身份客户端会调用 `POST /v1/identities/anonymous` 并保存 refresh token，但没有 refresh 接口；access token 过期后会重新走匿名创建。
 - 仓库里不存在实现 `/v1/*` 的服务端。打开远程开关会把客户端指向一个尚未存在的 API，而不是现有的 `/api/content`。
 - 种子祷告 4 条，计数是写死的大数（例如 12847），时间戳在模块加载时用 `Date.now()` 现算。个人页「祷告」次数来自本机 `prayedByMe`；「守望天数 18」「关注地区 7」是硬编码。
+- 2026-11-03 起，首页顶部用大卡片进入「全球祷告」（`/prayers`）。底部导航的「祷告」仍在，未选中时字色更深，选中时用浅底标出。祷告首页、列表和卡片上的人数写明是演示，去掉了「每日更新」和表示连线的绿色圆点。远程开关没有打开，也没有新的祷告后端。
+- 直接打开或刷新 Expo Router 页面时，`scripts/serve-static.py` 只对白名单返回 `dist/index.html`（200）：`/prayers`、`/testimonies`、`/profile`、`/about`、`/compose`、`/content/<id>`、`/prayer/<id>`、`/legal/community`、`/legal/privacy`。磁盘上已有同名文件或目录索引时仍用真实文件。`/api/*`、`/admin`、`/reader/*`、带扩展名却不存在的静态资源、点路径（含编码后的 `..`）和未知路径继续 404，不会改写成首页。POST、PUT、PATCH 不走这条回退。细节和发布时整目录替换 `site` 的备份要求见 [`docs/trial-deployment.md`](./trial-deployment.md)。回归测试是 `scripts/test_serve_static.py`。
 - 发布页有标题 60 字、正文 500 字、分类，以及社区守则勾选。没有地区、语言、编辑、删除、举报或敏感信息检测。
 
 ### 测试
 
 - Vitest：10 个 `*.test.ts`，37 个 `it`。覆盖 reducer、本地仓库、存储迁移、outbox、启动同步、身份 HTTP、内容 feed 解析、格式化。没有组件测试、路由测试或 E2E。
-- Python unittest：`scripts/test_admin_backend.py`、`test_generate_reader.py`、`test_reader_publisher.py`、`test_resilience_tools.py`，共 13 个测试方法。覆盖后台种子/上传/最后管理员保护、静态阅读器、发布签名和 SQLite 备份轮转。
+- Python unittest：`scripts/test_admin_backend.py`、`test_generate_reader.py`、`test_reader_publisher.py`、`test_resilience_tools.py`，以及后来补上的 `test_import_wechat_source.py`。覆盖后台种子/上传/最后管理员保护、静态阅读器、发布签名和 SQLite 备份轮转。
+- 2026-11-03 起 CI 的 Python unittest 还包含 `scripts/test_serve_static.py`，锁定上面的 SPA 白名单：名单内的直链返回入口页，`/api/*`、`/admin`、`/reader/*`、静态资源 404、目录穿越和 POST 等方法不回退。
 
 ## 已实现 vs 缺口
 
