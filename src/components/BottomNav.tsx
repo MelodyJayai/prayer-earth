@@ -75,14 +75,30 @@ const NavItem = memo(function NavItem({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       onPress={() => onPress(label)}
-      style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.item,
+        label === "祷告" && styles.prayerItem,
+        active && label === "祷告" && styles.prayerItemActive,
+        pressed && styles.pressed,
+      ]}
     >
       <Ionicons
         name={active ? filled : icon}
-        size={23}
-        color={active ? colors.green : colors.muted}
+        size={label === "祷告" ? 24 : 23}
+        color={
+          active ? colors.green : label === "祷告" ? colors.greenDark : colors.muted
+        }
       />
-      <Text style={[styles.label, active && styles.activeLabel]}>{label === "见证" ? "晨修·宣教" : label}</Text>
+      <Text
+        style={[
+          styles.label,
+          label === "祷告" && styles.prayerLabel,
+          active && styles.activeLabel,
+          active && label === "祷告" && styles.prayerLabelActive,
+        ]}
+      >
+        {label === "见证" ? "晨修·宣教" : label}
+      </Text>
     </Pressable>
   );
 });
@@ -104,7 +120,14 @@ const styles = StyleSheet.create({
   },
   gap: { width: 68 },
   label: { fontSize: 11, color: colors.muted },
+  prayerItem: { borderRadius: 16 },
+  prayerItemActive: {
+    backgroundColor: colors.mint,
+    marginHorizontal: 4,
+  },
+  prayerLabel: { color: colors.greenDark, fontWeight: "700" },
   activeLabel: { color: colors.green, fontWeight: "700" },
+  prayerLabelActive: { fontWeight: "800" },
   fab: {
     position: "absolute",
     width: 58,

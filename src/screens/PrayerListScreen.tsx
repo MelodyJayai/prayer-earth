@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { DemoDataNotice } from "../components/DemoDataNotice";
 import { PageHeader } from "../components/PageHeader";
 import { PrayerCard } from "../components/PrayerCard";
 import { categoryOptions } from "../data";
@@ -53,7 +54,8 @@ export const PrayerListScreen = memo(function PrayerListScreen({
       keyboardDismissMode="on-drag"
       ListHeaderComponent={
         <>
-          <PageHeader title="全球祷告" subtitle="与世界一同守望" />
+          <PageHeader title="全球祷告" subtitle="演示数据·未联网" />
+          <DemoDataNotice />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -87,9 +89,7 @@ export const PrayerListScreen = memo(function PrayerListScreen({
             })}
           </ScrollView>
           <View style={styles.meta}>
-            <Text style={styles.metaText}>{prayers.length} 项祷告</Text>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>每日更新</Text>
+            <Text style={styles.metaText}>{prayers.length} 项祷告 · 仅本机</Text>
           </View>
         </>
       }
@@ -125,19 +125,6 @@ const styles = StyleSheet.create({
   filterTextActive: { color: colors.white },
   meta: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   metaText: { fontSize: 12, color: colors.inkSoft, flex: 1 },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "#3F8C6B",
-    marginRight: 5,
-  },
-  liveText: {
-    fontSize: 11,
-    color: "#287052",
-    fontWeight: "800",
-    letterSpacing: 0.4,
-  },
   empty: { alignItems: "center", paddingVertical: 56 },
   emptyTitle: {
     fontSize: 17,

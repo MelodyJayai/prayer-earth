@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { DemoDataNotice } from "../components/DemoDataNotice";
 import { PageHeader } from "../components/PageHeader";
 import { PrayerCard } from "../components/PrayerCard";
 import { importedContentItems } from "../contentData";
@@ -42,39 +43,41 @@ export const HomeScreen = memo(function HomeScreen({
         title="愿平安临到世界"
         subtitle={formatToday(new Date(now))}
       />
-      <LinearGradient
-        colors={[colors.green, colors.greenDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="进入全球祷告。演示数据，未联网"
+        onPress={() => onTab("祷告")}
+        style={({ pressed }) => [pressed && styles.pressed]}
       >
-        <View style={styles.orbOne} />
-        <View style={styles.orbTwo} />
-        <Text style={styles.kicker}>今日共同祷告</Text>
-        <Text style={styles.heroTitle}>为世界的和平与{"\n"}受苦的人守望</Text>
-        <Text style={styles.heroBody}>
-          此刻，让我们跨越国家与时区，以爱彼此守望。
-        </Text>
-        <View style={styles.heroFooter}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onTab("祷告")}
-            style={({ pressed }) => [
-              styles.heroButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons name="heart" size={17} color={colors.greenDark} />
-            <Text style={styles.heroButtonText}>现在加入</Text>
-          </Pressable>
-          <Text style={styles.heroCount}>全球祷告每日更新</Text>
-        </View>
-      </LinearGradient>
+        <LinearGradient
+          colors={[colors.green, colors.greenDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.orbOne} />
+          <View style={styles.orbTwo} />
+          <Text style={styles.kicker}>全球祷告</Text>
+          <Text style={styles.heroTitle}>进入祷告列表</Text>
+          <Text style={styles.heroBody}>
+            按分类浏览本机里的祷告，或发布一条只保存在这台设备上的内容。
+          </Text>
+          <View style={styles.demoBadge}>
+            <Text style={styles.demoBadgeText}>演示数据·未联网</Text>
+          </View>
+          <View style={styles.heroButton}>
+            <Ionicons name="earth" size={18} color={colors.greenDark} />
+            <Text style={styles.heroButtonText}>进入全球祷告</Text>
+            <Ionicons name="arrow-forward" size={16} color={colors.greenDark} />
+          </View>
+        </LinearGradient>
+      </Pressable>
       <SectionTitle
-        title="正在发生的祷告"
+        title="本机里的祷告"
         action="查看全部"
         onPress={() => onTab("祷告")}
       />
+      <DemoDataNotice />
       <View style={wide ? styles.columns : undefined}>
         {prayers.slice(0, 3).map((item) => (
           <PrayerCard
@@ -191,29 +194,32 @@ const styles = StyleSheet.create({
     marginTop: 12,
     maxWidth: 400,
   },
-  heroFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 24,
-    gap: 12,
+  demoBadge: {
+    alignSelf: "flex-start",
+    marginTop: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,.16)",
+  },
+  demoBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   heroButton: {
-    minHeight: 44,
-    paddingHorizontal: 17,
-    borderRadius: 22,
+    minHeight: 52,
+    marginTop: 18,
+    paddingHorizontal: 18,
+    borderRadius: 26,
     backgroundColor: colors.white,
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    justifyContent: "center",
+    gap: 8,
   },
-  heroButtonText: { color: colors.greenDark, fontSize: 14, fontWeight: "700" },
-  heroCount: {
-    fontSize: 12,
-    color: "#D7E6E1",
-    flexShrink: 1,
-    textAlign: "right",
-  },
+  heroButtonText: { color: colors.greenDark, fontSize: 16, fontWeight: "800" },
   section: {
     flexDirection: "row",
     justifyContent: "space-between",

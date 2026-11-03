@@ -66,7 +66,7 @@ export const PrayerCard = memo(function PrayerCard({
             />
           </View>
           <Text style={styles.peopleText}>
-            {formatPrayerCount(item.prayerCount)} 人已祷告
+            {formatPrayerCount(item.prayerCount)} 人已祷告（演示）
           </Text>
         </View>
         <Pressable

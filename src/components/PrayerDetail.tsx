@@ -53,7 +53,7 @@ export function PrayerDetail({
           </Text>
           <Text style={styles.body}>{prayer.excerpt}</Text>
           <Text style={styles.count}>
-            {formatPrayerCount(prayer.prayerCount)} 人已一同守望
+            {formatPrayerCount(prayer.prayerCount)} 人已一同守望（演示计数）
           </Text>
           <Text style={styles.prompt}>让我们安静片刻，为此献上祷告。</Text>
           <Pressable
