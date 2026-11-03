@@ -21,6 +21,7 @@ class PublisherTests(unittest.TestCase):
                 publisher.safe_path(name)
         self.assertEqual(str(publisher.safe_path("media/upload/daily.jpg")), "media/upload/daily.jpg")
         self.assertEqual(str(publisher.safe_path("reader/news.html")), "reader/news.html")
+        self.assertEqual(str(publisher.safe_path("reader/prayers.html")), "reader/prayers.html")
         self.assertEqual(str(publisher.safe_path("reader/news-20261027-0123456789ab.html")), "reader/news-20261027-0123456789ab.html")
 
     def test_news_source_links_stay_https_and_admin_paths_stay_blocked(self):

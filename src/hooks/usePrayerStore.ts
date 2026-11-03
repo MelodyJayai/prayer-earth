@@ -16,7 +16,13 @@ import {
   localPrayerRepository,
   type PrayerRepository,
 } from "../repositories/prayerRepository";
-import { initialPrayerState, prayerReducer } from "../state/prayerReducer";
+import {
+  initialPrayerState,
+  persistedPrayedIds,
+  persistedPublishedPrayers,
+  prayerReducer,
+} from "../state/prayerReducer";
+import { fetchPrayerRequests, prayerFromRequest } from "../services/prayerRequests";
 import { runStartupSync } from "../services/startupSync";
 
 /**
@@ -102,19 +108,15 @@ export function usePrayerStore(repository: PrayerRepository = localPrayerReposit
   useEffect(() => {
     if (!state.hydrated || !persistenceReady) return;
     const snapshot: PrayerSnapshot = {
-      prayedIds: state.prayers
-        .filter(({ prayedByMe }) => prayedByMe)
-        .map(({ id }) => id),
-      publishedPrayers: state.prayers
-        .filter(({ source }) => source === "user" || source === "seed")
-        .slice(0, 100),
+      prayedIds: persistedPrayedIds(state),
+      publishedPrayers: persistedPublishedPrayers(state),
       outboxEvents: outboxEvents.current,
     };
     saveQueue.current = saveQueue.current
       .catch(() => undefined)
       .then(() => repository.saveSnapshot(snapshot))
       .catch(() => setStorageWarning("祷告记录暂时未能保存，请稍后重试。"));
-  }, [persistenceReady, repository, state.hydrated, state.prayers]);
+  }, [persistenceReady, repository, state]);
 
   useEffect(() => {
     if (!state.hydrated) return;
@@ -149,6 +151,64 @@ export function usePrayerStore(repository: PrayerRepository = localPrayerReposit
       active = false;
     };
   }, [repository, state.hydrated]);
+
+  const refreshPrayerFeed = useCallback(() => {
+    if (typeof document === "undefined") {
+      dispatch({ type: "feedFailed" });
+      return Promise.resolve();
+    }
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
+    const timer = setTimeout(() => controller?.abort(), 7500);
+    return fetchPrayerRequests()
+      .then((items) => {
+        if (controller?.signal.aborted) return;
+        dispatch({ type: "replaceNews", prayers: items.map(prayerFromRequest) });
+      })
+      .catch(() => {
+        if (controller?.signal.aborted) return;
+        dispatch({ type: "feedFailed" });
+      })
+      .finally(() => clearTimeout(timer));
+  }, []);
+
+  useEffect(() => {
+    if (!state.hydrated) return;
+    let active = true;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
+    const timer = setTimeout(() => controller?.abort(), 7500);
+    if (typeof document === "undefined") {
+      dispatch({ type: "feedFailed" });
+      clearTimeout(timer);
+      return;
+    }
+    fetchPrayerRequests()
+      .then((items) => {
+        if (!active) return;
+        dispatch({ type: "replaceNews", prayers: items.map(prayerFromRequest) });
+      })
+      .catch(() => {
+        if (active) dispatch({ type: "feedFailed" });
+      })
+      .finally(() => clearTimeout(timer));
+    return () => {
+      active = false;
+      controller?.abort();
+      clearTimeout(timer);
+    };
+  }, [state.hydrated]);
+
+  useEffect(() => {
+    if (!state.hydrated || typeof document === "undefined") return;
+    const resume = () => {
+      if (document.visibilityState === "visible") void refreshPrayerFeed();
+    };
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [refreshPrayerFeed, state.hydrated]);
 
   const togglePrayer = useCallback((id: string) => {
     const current = state.prayers.find(({ id: prayerId }) => prayerId === id);
@@ -226,14 +286,18 @@ export function usePrayerStore(repository: PrayerRepository = localPrayerReposit
       hydrated: state.hydrated,
       storageWarning,
       clearStorageWarning,
+      feedStatus: state.feedStatus,
       togglePrayer,
       publishPrayer,
+      refreshPrayerFeed,
       getFilteredPrayers,
     }),
     [
       clearStorageWarning,
       getFilteredPrayers,
       publishPrayer,
+      refreshPrayerFeed,
+      state.feedStatus,
       state.hydrated,
       state.prayers,
       storageWarning,

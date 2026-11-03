@@ -86,7 +86,13 @@ def safe_http_url(value: object) -> str | None:
 
 
 def nav(active: str) -> str:
-    links = [("全部", "index.html"), ("晨修", "morning.html"), ("宣教动态与见证", "mission.html"), ("宗教动态", "news.html")]
+    links = [
+        ("全部", "index.html"),
+        ("晨修", "morning.html"),
+        ("宣教动态与见证", "mission.html"),
+        ("宗教动态", "news.html"),
+        ("需要祷告", "prayers.html"),
+    ]
     return "<nav>" + "".join(
         f'<a class="{"active" if key == active else ""}" href="{href}">{esc(key)}</a>'
         for key, href in links
@@ -112,9 +118,10 @@ def card(item: dict[str, object]) -> str:
         excerpt = str(item.get("excerpt") or item.get("summary") or "")
         flag = "" if item.get("verified") is True else " · 待核实"
         source = str(item.get("sourceName") or item.get("source_name") or "")
+        heading = "需要祷告" if item.get("label") == "需要祷告" else "宗教动态"
         return f'''<a class="card" href="{esc(item_id)}.html">
   <div class="card-title">{esc(title)}</div>
-  <div class="card-meta">{esc(item.get("date", ""))} · 宗教动态{esc(flag)}</div>
+  <div class="card-meta">{esc(item.get("date", ""))} · {esc(heading)}{esc(flag)}</div>
   <div class="card-copy">{esc(excerpt)}</div>
   <div class="card-meta">来源：{esc(source)}</div>
 </a>'''
@@ -136,7 +143,13 @@ def news_source_html(item: dict[str, object]) -> str:
     )
 
 
-def render_feed_reader(path: str, items: list[dict[str, object]], *, include_admin: bool = True) -> str | None:
+def render_feed_reader(
+    path: str,
+    items: list[dict[str, object]],
+    *,
+    include_admin: bool = True,
+    prayer_items: list[dict[str, object]] | None = None,
+) -> str | None:
     """Render a live, zero-JavaScript reader route without writing any files.
 
     ``items`` uses the public GET /api/content schema. Each segment has a
@@ -155,13 +168,24 @@ def render_feed_reader(path: str, items: list[dict[str, object]], *, include_adm
         return None
     ordered = [item for item in items if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", str(item.get("id", "")))]
     ordered.sort(key=lambda item: (str(item.get("date", "")), str(item.get("id", ""))), reverse=True)
+    prayers = [item for item in (prayer_items or []) if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", str(item.get("id", "")))]
+    prayers.sort(key=lambda item: (str(item.get("date", "")), str(item.get("id", ""))), reverse=True)
+    prayer_ids = {str(item.get("id")) for item in prayers}
+    # A routed row must not also be rendered inside the news/global lists.
+    ordered = [item for item in ordered if str(item.get("id")) not in prayer_ids]
     header = '<header><div class="brand">祷告地球</div><div class="sub">同工内容 · 轻量阅读版</div></header>'
     footer = '<footer><a href="index.html">返回全部内容</a> · <a href="/">返回主应用</a>'
     if include_admin:
         footer += ' · <a href="/admin">管理员入口</a>'
     footer += '</footer>'
-    intro = '<div class="notice">按日期阅读同工发布的晨修与宣教图片。宗教动态只显示标题、短摘要和来源，不转载全文。新发布的内容会显示在最前面。</div>'
+    intro = '<div class="notice">按日期阅读同工发布的晨修与宣教图片。宗教动态只显示标题、短摘要和来源，不转载全文。已分流到「需要祷告」的动态不在宗教动态里重复出现。</div>'
     list_channels = {"index.html": "全部", "morning.html": "晨修", "mission.html": "宣教动态与见证", "news.html": "宗教动态"}
+    if name == "prayers.html":
+        cards = "".join(card(item) for item in prayers) or '<div class="notice">暂无需要代祷的动态。</div>'
+        body = (header + nav("需要祷告") + intro
+                + f'<h1>需要祷告</h1><div class="muted">共 {len(prayers)} 条 · 按日期从新到旧</div>'
+                + f'<div class="list">{cards}</div>' + footer)
+        return page("需要祷告", body, description="需要代祷的宗教动态短摘要")
     if name in list_channels:
         active = list_channels[name]
         visible = ordered if active == "全部" else [item for item in ordered if item.get("channel") == active]
@@ -171,30 +195,38 @@ def render_feed_reader(path: str, items: list[dict[str, object]], *, include_adm
             morning_count = sum(1 for item in ordered if item.get("channel") == "晨修")
             mission_count = sum(1 for item in ordered if item.get("channel") == "宣教动态与见证")
             news_count = sum(1 for item in ordered if is_news_item(item))
-            counts += f' · 晨修 {morning_count} 条 · 宣教动态与见证 {mission_count} 条 · 宗教动态 {news_count} 条'
+            counts += (
+                f' · 晨修 {morning_count} 条 · 宣教动态与见证 {mission_count} 条'
+                f' · 宗教动态 {news_count} 条 · 需要祷告 {len(prayers)} 条'
+            )
         body = (header + nav(active) + intro + f'<h1>{esc(title)}</h1><div class="muted">{esc(counts)}</div>'
                 + f'<div class="list">{"".join(card(item) for item in visible)}</div>' + footer)
         return page(title, body)
-    item = next((item for item in ordered if f'{item["id"]}.html' == name), None)
+    prayer_item = next((item for item in prayers if f'{item["id"]}.html' == name), None)
+    item = prayer_item if prayer_item is not None else next((item for item in ordered if f'{item["id"]}.html' == name), None)
     if item is None:
         return None
-    channel = str(item["channel"])
+    on_prayer = prayer_item is not None
+    channel = str(item.get("channel") or ("需要祷告" if on_prayer else ""))
     date = str(item["date"])
     title = str(item.get("title") or f"{channel} · {date}")
-    if is_news_item(item):
+    if on_prayer or is_news_item(item):
         summary = str(item.get("summary") or item.get("excerpt") or "")
         region = str(item.get("region") or "")
         verified = item.get("verified") is True
         flag = "" if verified else " · 待核实"
         notice = "以下为短摘要，不转载全文。请查看来源。" if verified else "待核实：这是短摘要，请打开来源核对原文。"
+        if on_prayer:
+            notice = "这条动态已分流到需要祷告。" + notice
         region_html = f" · {esc(region)}" if region else ""
+        back = '<a class="back" href="prayers.html">← 返回需要祷告</a>' if on_prayer else '<a class="back" href="news.html">← 返回宗教动态</a>'
         body = (header
-                + '<a class="back" href="news.html">← 返回宗教动态</a>'
+                + back
                 + f'<h1>{esc(title)}</h1><div class="muted">{esc(date)}{region_html}{esc(flag)}</div>'
                 + f'<div class="notice">{esc(notice)}</div>'
                 + f'<article class="article"><div class="source">{esc(summary)}</div>{news_source_html(item)}</article>'
                 + footer)
-        return page(title, body, description="宗教动态短摘要")
+        return page(title, body, description="需要代祷的短摘要" if on_prayer else "宗教动态短摘要")
     image_tags: list[str] = []
     for segment in item.get("segments", []):
         if not isinstance(segment, dict):
@@ -249,7 +281,7 @@ def write_reader(dist: Path, manifest: dict[str, object]) -> int:
         shutil.rmtree(root)
     root.mkdir(parents=True)
     items = seed["items"]
-    names = ["index.html", "morning.html", "mission.html", "news.html"] + [f'{item["id"]}.html' for item in items]
+    names = ["index.html", "morning.html", "mission.html", "news.html", "prayers.html"] + [f'{item["id"]}.html' for item in items]
     for name in names:
         rendered = render_feed_reader(name, items)
         if rendered is None:

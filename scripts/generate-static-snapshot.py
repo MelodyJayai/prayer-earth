@@ -67,6 +67,7 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
     store = AdminStore(data_dir, secure_cookies=True)
     feed = store.content(public=True)
     items = feed["items"]
+    prayer_items = store.reader_prayer_items()
     output.mkdir(parents=True, exist_ok=True)
     copied = set()
     for item in items:
@@ -79,10 +80,11 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
                 copied.add(uri)
     reader = output / "reader"
     reader.mkdir(parents=True, exist_ok=True)
-    routes = ["index.html", "morning.html", "mission.html", "news.html"]
+    routes = ["index.html", "morning.html", "mission.html", "news.html", "prayers.html"]
     routes.extend(f'{item["id"]}.html' for item in items)
+    routes.extend(f'{item["id"]}.html' for item in prayer_items)
     for route in routes:
-        markup = render_feed_reader(route, items, include_admin=False)
+        markup = render_feed_reader(route, items, include_admin=False, prayer_items=prayer_items)
         if markup is None:
             raise ValueError(f"reader route failed: {route}")
         markup = markup.replace("返回主应用", "阅读首页")
@@ -97,6 +99,7 @@ def build_snapshot(*, data_dir: Path, site_root: Path, output: Path) -> dict:
         "morning": sum(1 for item in items if item.get("channel") == "晨修"),
         "mission": sum(1 for item in items if item.get("channel") == "宣教动态与见证"),
         "news": sum(1 for item in items if item.get("kind") == "news" or item.get("channel") == "宗教动态"),
+        "prayers": len(prayer_items),
     }
     manifest = {
         "schema": 1,

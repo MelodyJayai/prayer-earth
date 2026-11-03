@@ -562,5 +562,300 @@ class NewsIngestTests(unittest.TestCase):
 _OMITTED = object()
 
 
+PRAYER_FIELDS = {"id", "title", "summary", "sourceName", "sourceUrl", "date", "region", "verified"}
+
+
+class PrayerRoutingTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.data = Path(self.tmp.name) / "private"
+        self.store = AdminStore(self.data, secure_cookies=False)
+        self.store.bootstrap("admin", "temporary-pass-1")
+        _, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
+        self.actor = login["user"]["id"]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _version(self):
+        with self.store._db() as db:
+            return db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0]
+
+    def _row_count(self):
+        with self.store._db() as db:
+            return db.execute("SELECT COUNT(*) FROM news").fetchone()[0]
+
+    def _ids(self, public=True):
+        return {item["id"] for item in self.store.content(public=public)["items"] if item.get("kind") == "news" or item.get("channel") == "宗教动态"}
+
+    def test_verified_keyword_is_auto_routed_by_date_and_not_duplicated(self):
+        created = self.store.ingest_news([
+            news_payload(verified=True, title="教会周报", summary="本周聚会安排", source_url="https://example.com/plain", published_at="2026-10-28T08:00:00Z"),
+            news_payload(verified=True, title="信徒遭监禁", summary="短摘要", source_url="https://example.com/old", published_at="2026-10-01T08:00:00Z"),
+            news_payload(verified=True, title="教会周报", summary="多地发生迫害", source_url="https://example.com/new", published_at="2026-10-20T08:00:00Z"),
+            news_payload(verified=True, title="Persecution report", summary="short", source_url="https://example.com/en", published_at="2026-10-21T08:00:00Z"),
+            news_payload(verified=True, title="地区新闻", summary="没有关键词", region="迫害", source_url="https://example.com/region", published_at="2026-10-22T08:00:00Z"),
+        ])
+        ids = created["inserted"]
+        version = self._version()
+        for news_id in ids:
+            self.store.review_news(self.actor, news_id, "publish")
+        plain, old, new, english, region_only = ids
+        prayers = self.store.prayer_requests()
+        prayer_ids = [item["id"] for item in prayers["items"]]
+        self.assertEqual(prayer_ids, [english, new, old])
+        self.assertTrue(all(set(item) == PRAYER_FIELDS for item in prayers["items"]))
+        self.assertTrue(all(item["verified"] is True for item in prayers["items"]))
+        self.assertNotIn("needsPrayer", prayers["items"][0])
+        self.assertNotIn("status", prayers["items"][0])
+        content_ids = self._ids()
+        self.assertIn(plain, content_ids)
+        self.assertIn(region_only, content_ids)
+        self.assertTrue(set(prayer_ids).isdisjoint(content_ids))
+        self.assertEqual(self._row_count(), 5)
+        self.assertGreater(self._version(), version)
+        again = self.store.review_news(self.actor, english, "publish")
+        self.assertEqual(again["status"], "published")
+        self.assertEqual(self._version(), prayers["version"])
+
+    def test_unverified_keyword_stays_on_news_until_marked_and_returns(self):
+        created = self.store.ingest_news([
+            news_payload(verified=False, title="有人被拘留", summary="待核对", source_url="https://example.com/unverified"),
+        ])
+        news_id = created["inserted"][0]
+        self.store.review_news(self.actor, news_id, "publish")
+        version = self._version()
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertIn(news_id, self._ids())
+        marked = self.store.set_news_prayer(self.actor, news_id, True)
+        self.assertEqual(marked["version"], version + 1)
+        self.assertTrue(marked["item"]["onPrayerPage"])
+        self.assertTrue(marked["item"]["needsPrayer"])
+        self.assertNotIn(news_id, self._ids())
+        prayer = self.store.prayer_requests()["items"]
+        self.assertEqual(prayer[0]["id"], news_id)
+        self.assertFalse(prayer[0]["verified"])
+        cleared = self.store.set_news_prayer(self.actor, news_id, False)
+        self.assertEqual(cleared["version"], version + 2)
+        self.assertFalse(cleared["item"]["onPrayerPage"])
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertIn(news_id, self._ids())
+        self.assertEqual(self._row_count(), 1)
+        self.store.set_news_prayer(self.actor, news_id, False)
+        self.assertEqual(self._version(), version + 2)
+
+    def test_exclusion_overrides_auto_and_manual_without_deleting(self):
+        created = self.store.ingest_news([
+            news_payload(verified=True, title="教堂遭袭击教会", summary="短摘要", source_url="https://example.com/auto"),
+            news_payload(verified=False, title="家人被绑架", summary="尚未核实", source_url="https://example.com/manual"),
+        ])
+        auto_id, manual_id = created["inserted"]
+        self.store.review_news(self.actor, auto_id, "publish")
+        self.store.review_news(self.actor, manual_id, "publish")
+        self.store.set_news_prayer(self.actor, manual_id, True)
+        self.assertEqual({item["id"] for item in self.store.prayer_requests()["items"]}, {auto_id, manual_id})
+        self.assertTrue(self._ids().isdisjoint({auto_id, manual_id}))
+        version = self._version()
+        excluded = self.store.set_news_prayer_exclusion(self.actor, auto_id, True)
+        self.assertTrue(excluded["item"]["prayerExcluded"])
+        self.assertFalse(excluded["item"]["onPrayerPage"])
+        self.assertEqual(excluded["version"], version + 1)
+        self.assertNotIn(auto_id, {item["id"] for item in self.store.prayer_requests()["items"]})
+        self.assertIn(auto_id, self._ids())
+        self.store.set_news_prayer_exclusion(self.actor, manual_id, True)
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertIn(manual_id, self._ids())
+        self.assertEqual(self._row_count(), 2)
+        restored = self.store.set_news_prayer_exclusion(self.actor, auto_id, False)
+        self.assertTrue(restored["item"]["onPrayerPage"])
+        self.assertNotIn(auto_id, self._ids())
+        self.assertIn(auto_id, {item["id"] for item in self.store.prayer_requests()["items"]})
+        with self.store._db() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM news").fetchone()[0], 2)
+            stored = json.loads(db.execute("SELECT data FROM news WHERE id=?", (auto_id,)).fetchone()[0])
+        self.assertEqual(stored["title"], "教堂遭袭击教会")
+
+    def test_string_verified_does_not_auto_route(self):
+        news_id = "news-20261027-abcdefabcdef"
+        payload = {
+            "id": news_id, "title": "信徒遭监禁", "summary": "短摘要",
+            "source_url": "https://example.com/string-verified", "source_name": "教会通讯",
+            "published_at": "2026-10-27T08:00:00Z", "date": "2026-10-27", "region": "全球",
+            "verified": "true", "category": "基督教",
+        }
+        with self.store._db() as db:
+            db.execute(
+                "INSERT INTO news(id,data,status,created_at,updated_at,needs_prayer,prayer_excluded) VALUES (?,?,'published',?,?,0,0)",
+                (news_id, json.dumps(payload), "t", "t"),
+            )
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertIn(news_id, self._ids())
+
+    def test_pending_keyword_is_not_public_until_publish(self):
+        created = self.store.ingest_news([
+            news_payload(verified=True, title="禁教之后", summary="短摘要", source_url="https://example.com/pending-prayer"),
+        ])
+        news_id = created["inserted"][0]
+        version = self._version()
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertNotIn(news_id, self._ids())
+        self.assertEqual(self._version(), version)
+        listing = self.store.news_listing()
+        item = next(entry for entry in listing["items"] if entry["id"] == news_id)
+        self.assertTrue(item["prayerCandidate"])
+        self.assertFalse(item["onPrayerPage"])
+        self.assertFalse(item["needsPrayer"])
+
+    def test_marking_pending_publishes_and_routes_once(self):
+        created = self.store.ingest_news([
+            news_payload(verified=False, title="普通周报", summary="没有关键词", source_url="https://example.com/mark-publish"),
+        ])
+        news_id = created["inserted"][0]
+        version = self._version()
+        result = self.store.set_news_prayer(self.actor, news_id, True)
+        self.assertEqual(result["item"]["status"], "published")
+        self.assertEqual(result["version"], version + 1)
+        self.assertEqual(self.store.prayer_requests()["items"][0]["id"], news_id)
+        self.assertNotIn(news_id, self._ids())
+        self.assertEqual(self._row_count(), 1)
+
+    def test_http_prayer_routes_require_session_csrf_and_hide_admin_fields(self):
+        created = self.store.ingest_news([
+            news_payload(verified=False, title="有人被拘押", summary="待核实摘要", source_url="https://example.com/http-prayer"),
+            news_payload(verified=True, title="关闭教会", summary="已核实", source_url="https://example.com/http-auto"),
+        ])
+        manual_id, auto_id = created["inserted"]
+        httpd = start_server(self.store)
+        port = httpd.server_address[1]
+        origin = f"http://127.0.0.1:{port}"
+        try:
+            status, denied = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True})
+            self.assertEqual(status, 401)
+            self.assertEqual(json.loads(denied)["error"], "authentication_required")
+            token, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
+            temporary = {"Origin": origin, "Cookie": "prayer_admin_session=" + token, "X-CSRF-Token": login["csrfToken"]}
+            status, blocked = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True}, temporary)
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(blocked)["error"], "password_change_required")
+            session = self.store.change_password(self.actor, "temporary-pass-1", "permanent-pass-1", token)
+            headers = {"Origin": origin, "Cookie": "prayer_admin_session=" + token, "X-CSRF-Token": session["csrfToken"]}
+            status, _ = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True}, dict(headers, Origin="https://evil.example"))
+            self.assertEqual(status, 403)
+            missing = dict(headers)
+            missing.pop("X-CSRF-Token")
+            status, missing_body = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True}, missing)
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(missing_body)["error"], "invalid_csrf")
+            status, extra = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True, "force": True}, headers)
+            self.assertEqual(status, 400)
+            self.assertEqual(json.loads(extra)["error"], "unknown_field")
+            status, boolean = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": "true"}, headers)
+            self.assertEqual(status, 400)
+            self.assertEqual(json.loads(boolean)["error"], "invalid_needs_prayer")
+            version = self._version()
+            status, marked = request(port, "POST", f"/api/admin/news/{manual_id}/prayer", {"needs_prayer": True}, headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(marked)["version"], version + 1)
+            status, published = request(port, "POST", f"/api/admin/news/{auto_id}/publish", {}, headers)
+            self.assertEqual(status, 200)
+            status, public_headers, public_body = request_response(port, "GET", "/api/prayer-requests")
+            self.assertEqual(status, 200)
+            self.assertIn("nosniff", public_headers.get("x-content-type-options", ""))
+            self.assertIn("max-age=30", public_headers.get("cache-control", ""))
+            self.assertIn("prayer-requests-", public_headers.get("etag", ""))
+            payload = json.loads(public_body)
+            by_id = {item["id"]: item for item in payload["items"]}
+            self.assertEqual(set(by_id), {auto_id, manual_id})
+            self.assertFalse(by_id[manual_id]["verified"])
+            self.assertTrue(by_id[auto_id]["verified"])
+            self.assertNotIn("needsPrayer", public_body.decode())
+            self.assertNotIn("prayerExcluded", public_body.decode())
+            status, content_body = request(port, "GET", "/api/content")
+            content = json.loads(content_body)
+            self.assertTrue({auto_id, manual_id}.isdisjoint({item["id"] for item in content["items"]}))
+            self.assertEqual(content["version"], payload["version"])
+            status, method = request(port, "POST", "/api/prayer-requests", {})
+            self.assertEqual(status, 405)
+            status, excluded = request(port, "POST", f"/api/admin/news/{auto_id}/prayer-exclusion", {"excluded": True}, headers)
+            self.assertEqual(status, 200)
+            self.assertFalse(json.loads(excluded)["item"]["onPrayerPage"])
+            status, after = request(port, "GET", "/api/content")
+            self.assertIn(auto_id, {item["id"] for item in json.loads(after)["items"]})
+            status, prayers_after = request(port, "GET", "/api/prayer-requests")
+            self.assertNotIn(auto_id, {item["id"] for item in json.loads(prayers_after)["items"]})
+            editor = self.store.create_user(self.actor, {"username": "editor1", "password": "temporary-pass-2", "role": "editor"})
+            editor_token, editor_login = self.store.login("editor1", "temporary-pass-2", "10.0.0.8")
+            status, editor_denied = request(port, "POST", f"/api/admin/news/{auto_id}/prayer-exclusion", {"excluded": False}, {
+                "Origin": origin, "Cookie": "prayer_admin_session=" + editor_token, "X-CSRF-Token": editor_login["csrfToken"],
+            })
+            self.assertEqual(status, 403)
+            self.assertEqual(json.loads(editor_denied)["error"], "password_change_required")
+            editor_session = self.store.change_password(editor["id"], "temporary-pass-2", "permanent-pass-2", editor_token)
+            status, editor_ok = request(port, "POST", f"/api/admin/news/{auto_id}/prayer-exclusion", {"excluded": False}, {
+                "Origin": origin, "Cookie": "prayer_admin_session=" + editor_token, "X-CSRF-Token": editor_session["csrfToken"],
+            })
+            self.assertEqual(status, 200)
+            self.assertTrue(json.loads(editor_ok)["item"]["onPrayerPage"])
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
+
+class PrayerColumnMigrationTests(unittest.TestCase):
+    def test_old_news_table_gains_flags_without_losing_rows(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        data = Path(tmp.name) / "private"
+        data.mkdir()
+        connection = sqlite3.connect(data / "admin.sqlite3")
+        payload = {"id": "news-20261027-0123456789ab", "title": "旧行", "summary": "保留"}
+        connection.executescript("""
+            CREATE TABLE news (
+              id TEXT PRIMARY KEY, data TEXT NOT NULL, status TEXT NOT NULL,
+              created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE TABLE meta (key TEXT PRIMARY KEY, value INTEGER NOT NULL);
+            INSERT INTO meta(key, value) VALUES ('version', 7);
+        """)
+        connection.execute(
+            "INSERT INTO news(id, data, status, created_at, updated_at) VALUES (?,?, 'published', 't0', 't1')",
+            ("news-20261027-0123456789ab", json.dumps(payload, ensure_ascii=False)),
+        )
+        connection.commit()
+        connection.close()
+        store = AdminStore(data, secure_cookies=False)
+        with store._db() as db:
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(news)")}
+            row = db.execute("SELECT data, status, needs_prayer, prayer_excluded, created_at FROM news").fetchone()
+            version = db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0]
+        self.assertIn("needs_prayer", columns)
+        self.assertIn("prayer_excluded", columns)
+        self.assertEqual(json.loads(row["data"])["title"], "旧行")
+        self.assertEqual(row["status"], "published")
+        self.assertEqual(row["needs_prayer"], 0)
+        self.assertEqual(row["prayer_excluded"], 0)
+        self.assertEqual(row["created_at"], "t0")
+        self.assertEqual(version, 7)
+        self.assertEqual(store.prayer_requests()["items"], [])
+        restarted = AdminStore(data, secure_cookies=False)
+        with restarted._db() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM news").fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0], 7)
+
+
+def request_response(port, method, path, body=None, headers=None):
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    raw = None if body is None else body if isinstance(body, bytes) else json.dumps(body).encode()
+    header_map = dict(headers or {})
+    if raw is not None and "Content-Type" not in header_map:
+        header_map["Content-Type"] = "application/json"
+    connection.request(method, path, body=raw, headers=header_map)
+    response = connection.getresponse()
+    payload = response.read()
+    status = response.status
+    header_map = {key.lower(): value for key, value in response.getheaders()}
+    connection.close()
+    return status, header_map, payload
+
+
 if __name__ == "__main__":
     unittest.main()

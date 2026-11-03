@@ -23,7 +23,7 @@
 
 | 表面 | 用户实际看到的 | 数据从哪来 |
 | --- | --- | --- |
-| 首页、祷告列表、祷告详情、发布 | 4 条种子祷告 + 本机发布，页面标明「演示数据·未联网」 | `src/data.ts` 与 AsyncStorage。远程开关默认关闭。首页顶部有「全球祷告」入口，跳到 `/prayers` |
+| 首页、祷告列表、祷告详情、发布 | 已分流的宗教动态；本机发布仍在 | Web 读同源 `GET /api/prayer-requests`。失败或为空时说明原因，不再把 4 条种子当作真实祷告。远程开关仍关闭。首页顶部进入 `/prayers` |
 | 底部「见证」 | 晨修与宣教图片库，不是种子见证 | Web 优先读 `/api/content`，失败则用随包 `src/contentData.ts`；原生只读随包数据 |
 | 「我的 → 管理员入口」 | 跳到 `/admin`（Web）或 `https://prayer.diagport.com/admin`（原生） | 内容管理后台，不是祷告审核台 |
 
@@ -45,7 +45,7 @@
 - `RemotePrayerRepository` 已按契约封装列表、详情、创建、祷告动作、删除、举报和 `POST /v1/outbox/batch`。启动同步只拉一页（`limit: 50`），没有翻页、下拉刷新或增量游标循环。匿名身份客户端会调用 `POST /v1/identities/anonymous` 并保存 refresh token，但没有 refresh 接口；access token 过期后会重新走匿名创建。
 - 仓库里不存在实现 `/v1/*` 的服务端。打开远程开关会把客户端指向一个尚未存在的 API，而不是现有的 `/api/content`。
 - 种子祷告 4 条，计数是写死的大数（例如 12847），时间戳在模块加载时用 `Date.now()` 现算。个人页「祷告」次数来自本机 `prayedByMe`；「守望天数 18」「关注地区 7」是硬编码。
-- 2026-11-03 起，首页顶部用大卡片进入「全球祷告」（`/prayers`）。底部导航的「祷告」仍在，未选中时字色更深，选中时用浅底标出。祷告首页、列表和卡片上的人数写明是演示，去掉了「每日更新」和表示连线的绿色圆点。远程开关没有打开，也没有新的祷告后端。
+- 2026-11-03 起，首页顶部用大卡片进入「全球祷告」（`/prayers`）。底部导航的「祷告」仍在。祷告页改为同源 `GET /api/prayer-requests`：已公开且（已核实并命中迫害关键词，或同工手动标记）且未被排除的宗教动态。这些条目从 `/api/content`、主应用动态列表、轻量阅读 `news.html` 和备用站快照的宗教动态里移出，改在「需要祷告」展示。取消标记或排除后回到原列表。数据库不删行。代祷人数不再写死；「我来祷告」只记在本机。`EXPO_PUBLIC_ENABLE_REMOTE_CONTENT` 仍是 false。种子数组还在 `src/data.ts`，页面不再把它当成真实祷告。
 - 直接打开或刷新 Expo Router 页面时，`scripts/serve-static.py` 只对白名单返回 `dist/index.html`（200）：`/prayers`、`/testimonies`、`/profile`、`/about`、`/compose`、`/content/<id>`、`/prayer/<id>`、`/legal/community`、`/legal/privacy`。磁盘上已有同名文件或目录索引时仍用真实文件。`/api/*`、`/admin`、`/reader/*`、带扩展名却不存在的静态资源、点路径（含编码后的 `..`）和未知路径继续 404，不会改写成首页。POST、PUT、PATCH 不走这条回退。细节和发布时整目录替换 `site` 的备份要求见 [`docs/trial-deployment.md`](./trial-deployment.md)。回归测试是 `scripts/test_serve_static.py`。
 - 发布页有标题 60 字、正文 500 字、分类，以及社区守则勾选。没有地区、语言、编辑、删除、举报或敏感信息检测。
 

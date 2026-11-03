@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Prayer } from "../domain/types";
+import { SourceLink } from "./NewsItemCard";
 import { colors } from "../theme";
-import { formatPrayerCount } from "../utils/formatters";
 
 export function PrayerDetail({
   prayer,
@@ -46,14 +46,21 @@ export function PrayerDetail({
             <Ionicons name="earth" size={29} color={colors.white} />
           </View>
           <Text style={styles.category}>
-            {prayer.flag} {prayer.location}
+            {prayer.flag ? `${prayer.flag} ` : ""}
+            {prayer.location}
+            {prayer.source === "news" && prayer.verified === false ? " · 待核实" : ""}
           </Text>
           <Text accessibilityRole="header" style={styles.title}>
             {prayer.title}
           </Text>
           <Text style={styles.body}>{prayer.excerpt}</Text>
+          {prayer.source === "news" && prayer.sourceUrl && prayer.sourceName ? (
+            <Text style={styles.count}>
+              来源：<SourceLink href={prayer.sourceUrl}>{prayer.sourceName}</SourceLink>
+            </Text>
+          ) : null}
           <Text style={styles.count}>
-            {formatPrayerCount(prayer.prayerCount)} 人已一同守望（演示计数）
+            {prayer.prayedByMe ? "你已为此祷告" : "祷告记录只留在这台设备"}
           </Text>
           <Text style={styles.prompt}>让我们安静片刻，为此献上祷告。</Text>
           <Pressable

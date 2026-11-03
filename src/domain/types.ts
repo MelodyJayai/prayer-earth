@@ -14,12 +14,16 @@ export type Prayer = {
   excerpt: string;
   location: string;
   flag: string;
-  category: PrayerCategory;
+  category: PrayerCategory | "代祷";
   prayerCount: number;
   createdAt: string;
   urgent: boolean;
   prayedByMe: boolean;
-  source: "seed" | "user";
+  source: "seed" | "user" | "news";
+  sourceUrl?: string;
+  sourceName?: string;
+  /** Present for routed news. False means the card shows 待核实. */
+  verified?: boolean;
 };
 
 export type Testimony = {

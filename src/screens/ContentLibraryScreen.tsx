@@ -67,7 +67,7 @@ export const ContentLibraryScreen = memo(function ContentLibraryScreen({
         <View>
           <Text style={styles.eyebrow}>微信群内容试用版</Text>
           <Text style={styles.title}>晨修与宣教动态</Text>
-          <Text style={styles.subtitle}>按栏目、月份浏览已导入的完整清晰图片，点击卡片阅读原图。宗教动态只显示标题、短摘要和来源。</Text>
+          <Text style={styles.subtitle}>按栏目、月份浏览已导入的完整清晰图片，点击卡片阅读原图。宗教动态只显示标题、短摘要和来源。已分流到祷告页的动态不在这里重复出现。</Text>
           <View style={styles.tabs}>
             {channels.map((item) => (
               <Pressable
