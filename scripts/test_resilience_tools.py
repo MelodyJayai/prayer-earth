@@ -134,6 +134,73 @@ class ResilienceToolTests(unittest.TestCase):
             self.assertFalse((rejected / "reader" / f"{inserted['inserted'][0]}.html").exists())
             self.assertEqual(after_reject["contentVersion"], version + 2)
 
+    def test_prayer_routing_updates_content_and_snapshot_signature_together(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            site, data = root / "site", root / "data"
+            site.mkdir()
+            store = AdminStore(data, secure_cookies=False)
+            created = store.ingest_news([
+                {
+                    "title": "普通教会周报",
+                    "summary": "留在宗教动态",
+                    "source_url": "https://example.com/church/plain",
+                    "source_name": "教会通讯",
+                    "published_at": "2026-10-27T08:00:00Z",
+                    "region": "全球",
+                    "verified": True,
+                    "category": "教会",
+                },
+                {
+                    "title": "信徒遭监禁",
+                    "summary": "需要代祷的测试动态",
+                    "source_url": "https://example.com/church/persecution",
+                    "source_name": "教会通讯",
+                    "published_at": "2026-10-28T08:00:00Z",
+                    "region": "全球",
+                    "verified": True,
+                    "category": "教会",
+                },
+            ])
+            plain_id, prayer_id = created["inserted"]
+            for news_id in created["inserted"]:
+                store.review_news("editor", news_id, "publish")
+            routed = root / "routed"
+            manifest = build_snapshot(data_dir=data, site_root=site, output=routed)
+            _PUBLISHER.validate_snapshot(routed)
+            public = store.content(public=True)
+            self.assertEqual(public["version"], manifest["contentVersion"])
+            self.assertIn(plain_id, {item["id"] for item in public["items"]})
+            self.assertNotIn(prayer_id, {item["id"] for item in public["items"]})
+            self.assertEqual([item["id"] for item in store.prayer_requests()["items"]], [prayer_id])
+            news_html = (routed / "reader" / "news.html").read_text(encoding="utf-8")
+            prayer_html = (routed / "reader" / "prayers.html").read_text(encoding="utf-8")
+            detail_html = (routed / "reader" / f"{prayer_id}.html").read_text(encoding="utf-8")
+            index_html = (routed / "reader" / "index.html").read_text(encoding="utf-8")
+            self.assertIn("普通教会周报", news_html)
+            self.assertNotIn("信徒遭监禁", news_html)
+            self.assertIn("信徒遭监禁", prayer_html)
+            self.assertIn('rel="noopener noreferrer"', detail_html)
+            self.assertIn("https://example.com/church/persecution", detail_html)
+            self.assertNotIn("信徒遭监禁", index_html)
+            self.assertEqual(manifest["counts"]["prayers"], 1)
+            self.assertEqual(manifest["counts"]["news"], 1)
+            signature = _PUBLISHER.signature(manifest)
+            store.set_news_prayer_exclusion("editor", prayer_id, True)
+            restored = root / "restored"
+            again = build_snapshot(data_dir=data, site_root=site, output=restored)
+            _PUBLISHER.validate_snapshot(restored)
+            self.assertEqual(again["contentVersion"], manifest["contentVersion"] + 1)
+            self.assertEqual(store.content(public=True)["version"], again["contentVersion"])
+            self.assertIn(prayer_id, {item["id"] for item in store.content(public=True)["items"]})
+            self.assertEqual(store.prayer_requests()["items"], [])
+            self.assertIn("信徒遭监禁", (restored / "reader" / "news.html").read_text(encoding="utf-8"))
+            self.assertNotIn("信徒遭监禁", (restored / "reader" / "prayers.html").read_text(encoding="utf-8"))
+            self.assertNotEqual(signature, _PUBLISHER.signature(again))
+            with store._db() as db:
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM news").fetchone()[0], 2)
+                self.assertEqual(db.execute("SELECT status FROM news WHERE id=?", (prayer_id,)).fetchone()[0], "published")
+
     def test_backup_uses_sqlite_snapshot_and_rotates(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

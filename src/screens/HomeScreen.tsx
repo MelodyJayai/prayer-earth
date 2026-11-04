@@ -8,6 +8,7 @@ import { PrayerCard } from "../components/PrayerCard";
 import { importedContentItems } from "../contentData";
 import { isTextNewsItem, type FeedItem } from "../services/contentFeed";
 import type { AppTab, Prayer } from "../domain/types";
+import type { PrayerFeedStatus } from "../state/prayerReducer";
 import { useMinuteClock } from "../hooks/useMinuteClock";
 import { colors } from "../theme";
 import { formatToday } from "../utils/formatters";
@@ -15,6 +16,7 @@ import { formatToday } from "../utils/formatters";
 type Props = {
   wide: boolean;
   prayers: Prayer[];
+  feedStatus?: PrayerFeedStatus;
   contentItems?: FeedItem[];
   onPray: (id: string) => void;
   onOpen: (id: string) => void;
@@ -24,6 +26,7 @@ type Props = {
 export const HomeScreen = memo(function HomeScreen({
   wide,
   prayers,
+  feedStatus = "ready",
   contentItems = importedContentItems,
   onPray,
   onOpen,
@@ -33,6 +36,14 @@ export const HomeScreen = memo(function HomeScreen({
   const morningCount = contentItems.filter((item) => item.channel === "晨修").length;
   const missionCount = contentItems.filter((item) => item.channel === "宣教动态与见证").length;
   const newsCount = contentItems.filter((item) => isTextNewsItem(item)).length;
+  const prayerNews = prayers.filter((item) => item.source === "news").slice(0, 3);
+  const mine = prayers.filter((item) => item.source === "user").slice(0, 2);
+  const showingSeeds = prayers.some((item) => item.source === "seed");
+  const prayerEmpty = feedStatus === "loading"
+    ? "正在读取需要代祷的动态"
+    : feedStatus === "error"
+      ? "暂时无法读取需要代祷的动态"
+      : "暂无需要代祷的动态";
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -45,7 +56,7 @@ export const HomeScreen = memo(function HomeScreen({
       />
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="进入全球祷告。演示数据，未联网"
+        accessibilityLabel="进入全球祷告"
         onPress={() => onTab("祷告")}
         style={({ pressed }) => [pressed && styles.pressed]}
       >
@@ -60,11 +71,8 @@ export const HomeScreen = memo(function HomeScreen({
           <Text style={styles.kicker}>全球祷告</Text>
           <Text style={styles.heroTitle}>进入祷告列表</Text>
           <Text style={styles.heroBody}>
-            按分类浏览本机里的祷告，或发布一条只保存在这台设备上的内容。
+            查看同工标出的、需要代祷的宗教动态。来源可以打开核对。「我来祷告」只记在这台设备上。
           </Text>
-          <View style={styles.demoBadge}>
-            <Text style={styles.demoBadgeText}>演示数据·未联网</Text>
-          </View>
           <View style={styles.heroButton}>
             <Ionicons name="earth" size={18} color={colors.greenDark} />
             <Text style={styles.heroButtonText}>进入全球祷告</Text>
@@ -73,13 +81,14 @@ export const HomeScreen = memo(function HomeScreen({
         </LinearGradient>
       </Pressable>
       <SectionTitle
-        title="本机里的祷告"
+        title="需要代祷的动态"
         action="查看全部"
         onPress={() => onTab("祷告")}
       />
-      <DemoDataNotice />
+      {showingSeeds ? <DemoDataNotice /> : null}
+      {prayerNews.length === 0 ? <Text style={styles.emptyCopy}>{prayerEmpty}</Text> : null}
       <View style={wide ? styles.columns : undefined}>
-        {prayers.slice(0, 3).map((item) => (
+        {prayerNews.map((item) => (
           <PrayerCard
             key={item.id}
             item={item}
@@ -90,6 +99,16 @@ export const HomeScreen = memo(function HomeScreen({
           />
         ))}
       </View>
+      {mine.length > 0 ? (
+        <>
+          <SectionTitle title="保存在这台设备上的祷告" action="查看全部" onPress={() => onTab("祷告")} />
+          <View style={wide ? styles.columns : undefined}>
+            {mine.map((item) => (
+              <PrayerCard key={item.id} item={item} onPray={onPray} onOpen={onOpen} compact={wide} now={now} />
+            ))}
+          </View>
+        </>
+      ) : null}
       <SectionTitle
         title="同工内容"
         action="打开内容库"
@@ -194,20 +213,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     maxWidth: 400,
   },
-  demoBadge: {
-    alignSelf: "flex-start",
-    marginTop: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,.16)",
-  },
-  demoBadgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
   heroButton: {
     minHeight: 52,
     marginTop: 18,
@@ -220,6 +225,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   heroButtonText: { color: colors.greenDark, fontSize: 16, fontWeight: "800" },
+  emptyCopy: { fontSize: 14, lineHeight: 22, color: colors.inkSoft, marginBottom: 8 },
   section: {
     flexDirection: "row",
     justifyContent: "space-between",

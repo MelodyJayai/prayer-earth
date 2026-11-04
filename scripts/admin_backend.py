@@ -68,6 +68,21 @@ DEFAULT_INGEST_KEY_FILE = Path("/etc/prayer-earth-news/ingest.key")
 NEWS_CHANNEL = "宗教动态"
 NEWS_CATEGORIES = {"基督教", "宗教宣教", "教会", "教会相关"}
 NEWS_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", "region", "verified", "category"}
+# Substring match on title + summary only. Keep phrases specific; region,
+# source name and URL must not pull an unrelated item onto the prayer page.
+PRAYER_CANDIDATE_KEYWORDS = (
+    "迫害",
+    "逾捕",
+    "监禁",
+    "袭击教会",
+    "杀害",
+    "绑架",
+    "禁教",
+    "拘留",
+    "关闭教会",
+    "拘押",
+    "persecution",
+)
 
 
 class ApiError(Exception):
@@ -243,6 +258,46 @@ def _news_id(stamp: dt.datetime, canonical_url: str) -> str:
     return f"news-{stamp.astimezone(dt.timezone.utc).strftime('%Y%m%d')}-{digest}"
 
 
+def _prayer_haystack(data: dict) -> str:
+    parts = []
+    for key in ("title", "summary"):
+        value = data.get(key)
+        if isinstance(value, str):
+            parts.append(value)
+    return "\n".join(parts)
+
+
+def is_prayer_candidate(data: object) -> bool:
+    """True when title or summary contains a persecution keyword."""
+    if not isinstance(data, dict):
+        return False
+    text = _prayer_haystack(data).casefold()
+    if not text:
+        return False
+    return any(keyword.casefold() in text for keyword in PRAYER_CANDIDATE_KEYWORDS)
+
+
+def _flag_on(value: object) -> bool:
+    return value == 1 or value is True
+
+
+def on_prayer_page(data: object, *, status: str, needs_prayer: object, prayer_excluded: object) -> bool:
+    """Whether a row is shown on the prayer page instead of the news list.
+
+    Exclusion wins over both the keyword rule and a manual mark. Unverified
+    rows are routed only when an administrator marks them. Verified rows whose
+    title or summary hits a keyword are routed unless excluded. Pending and
+    rejected rows stay off both public surfaces.
+    """
+    if status != "published" or not isinstance(data, dict):
+        return False
+    if _flag_on(prayer_excluded):
+        return False
+    if _flag_on(needs_prayer):
+        return True
+    return data.get("verified") is True and is_prayer_candidate(data)
+
+
 def _user(row) -> dict:
     return {"id": row["id"], "username": row["username"], "role": row["role"],
             "active": bool(row["active"]), "mustChangePassword": bool(row["must_change_password"])}
@@ -283,9 +338,12 @@ class AdminStore:
             CREATE TABLE IF NOT EXISTS news (
               id TEXT PRIMARY KEY, data TEXT NOT NULL, status TEXT NOT NULL
               CHECK(status IN ('pending','published','rejected')),
-              created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+              created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+              needs_prayer INTEGER NOT NULL DEFAULT 0,
+              prayer_excluded INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS news_status ON news(status, id);
             """)
+            self._migrate_news_prayer_columns(db)
             if seed_file:
                 seed = json.loads(Path(seed_file).read_text(encoding="utf-8-sig"))
                 items = seed.get("items", []) if isinstance(seed, dict) else seed
@@ -331,6 +389,53 @@ class AdminStore:
     @staticmethod
     def _bump(db):
         db.execute("UPDATE meta SET value=value+1 WHERE key='version'")
+
+    @staticmethod
+    def _migrate_news_prayer_columns(db) -> None:
+        """Add prayer flags to databases created before this column existed.
+
+        ``CREATE TABLE IF NOT EXISTS`` does not alter an older ``news`` table.
+        New columns default to 0, so existing rows stay unmarked and unexcluded.
+        """
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(news)")}
+        if "needs_prayer" not in columns:
+            db.execute("ALTER TABLE news ADD COLUMN needs_prayer INTEGER NOT NULL DEFAULT 0")
+        if "prayer_excluded" not in columns:
+            db.execute("ALTER TABLE news ADD COLUMN prayer_excluded INTEGER NOT NULL DEFAULT 0")
+
+    def _news_public_sets(self, db) -> tuple[frozenset[str], frozenset[str]]:
+        """Published ids on the news list, then ids routed to the prayer page."""
+        content_ids: set[str] = set()
+        prayer_ids: set[str] = set()
+        rows = db.execute(
+            "SELECT id, data, needs_prayer, prayer_excluded FROM news WHERE status='published'"
+        ).fetchall()
+        for row in rows:
+            try:
+                data = json.loads(row["data"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if on_prayer_page(
+                data,
+                status="published",
+                needs_prayer=row["needs_prayer"],
+                prayer_excluded=row["prayer_excluded"],
+            ):
+                prayer_ids.add(row["id"])
+            else:
+                content_ids.add(row["id"])
+        return frozenset(content_ids), frozenset(prayer_ids)
+
+    def _bump_if_news_public_changed(self, db, before: tuple[frozenset[str], frozenset[str]]) -> None:
+        """Bump once when either public surface gains or loses a news id.
+
+        ``/api/content`` version and the failover snapshot share this counter.
+        Moving a row between the news list and the prayer page changes both
+        what the content feed returns and the reader HTML, so the version and
+        the snapshot signature move together. A no-op leaves the version alone.
+        """
+        if self._news_public_sets(db) != before:
+            self._bump(db)
 
     @staticmethod
     def _username(username):
@@ -468,8 +573,20 @@ class AdminStore:
             if public:
                 # Pending and rejected news stay out of the public feed, the
                 # reader, and failover snapshots. Ingest does not bump version.
-                for news_row in db.execute("SELECT data FROM news WHERE status='published'"):
-                    items.append(self._public_news(json.loads(news_row["data"])))
+                # Rows routed to the prayer page are omitted here so the news
+                # list, /reader/news.html and failover snapshots do not repeat them.
+                for news_row in db.execute(
+                    "SELECT data, needs_prayer, prayer_excluded FROM news WHERE status='published'"
+                ):
+                    data = json.loads(news_row["data"])
+                    if on_prayer_page(
+                        data,
+                        status="published",
+                        needs_prayer=news_row["needs_prayer"],
+                        prayer_excluded=news_row["prayer_excluded"],
+                    ):
+                        continue
+                    items.append(self._public_news(data))
             items.sort(key=lambda item: (item.get("date", ""), item["id"]), reverse=True)
             version = db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0]
             return {"version": version, "items": items}
@@ -585,7 +702,14 @@ class AdminStore:
             raise
 
     @staticmethod
-    def _public_news(data: dict, *, status: str | None = None, updated_at: str | None = None) -> dict:
+    def _public_news(
+        data: dict,
+        *,
+        status: str | None = None,
+        updated_at: str | None = None,
+        needs_prayer: object = 0,
+        prayer_excluded: object = 0,
+    ) -> dict:
         item = {
             "id": data["id"],
             "kind": "news",
@@ -611,6 +735,14 @@ class AdminStore:
         if status is not None:
             item["status"] = status
             item["updatedAt"] = updated_at
+            marked = _flag_on(needs_prayer)
+            excluded = _flag_on(prayer_excluded)
+            item["needsPrayer"] = marked
+            item["prayerExcluded"] = excluded
+            item["prayerCandidate"] = is_prayer_candidate(data)
+            item["onPrayerPage"] = on_prayer_page(
+                data, status=status, needs_prayer=needs_prayer, prayer_excluded=prayer_excluded,
+            )
         return item
 
     def _normalize_news_item(self, raw: object, index: int) -> dict:
@@ -666,7 +798,8 @@ class AdminStore:
         with self._db() as db:
             for record in records:
                 db.execute(
-                    "INSERT OR IGNORE INTO news(id,data,status,created_at,updated_at) VALUES (?,?,'pending',?,?)",
+                    "INSERT OR IGNORE INTO news(id,data,status,created_at,updated_at,needs_prayer,prayer_excluded) "
+                    "VALUES (?,?,'pending',?,?,0,0)",
                     (record["id"], json.dumps(record, ensure_ascii=False), _now(), _now()),
                 )
                 if db.execute("SELECT changes()").fetchone()[0]:
@@ -684,6 +817,7 @@ class AdminStore:
             raise ApiError(404, "news_not_found", "动态不存在。")
         target = "published" if action == "publish" else "rejected"
         with self._db() as db:
+            before = self._news_public_sets(db)
             row = db.execute("SELECT * FROM news WHERE id=?", (news_id,)).fetchone()
             if not row:
                 raise ApiError(404, "news_not_found", "动态不存在。")
@@ -692,12 +826,15 @@ class AdminStore:
             if previous != target:
                 stamp = _now()
                 db.execute("UPDATE news SET status=?, updated_at=? WHERE id=?", (target, stamp, news_id))
-                # Version tracks the public feed. Leaving or entering `published`
-                # changes what readers and failover snapshots can see.
-                if previous == "published" or target == "published":
-                    self._bump(db)
+            self._bump_if_news_public_changed(db, before)
             self._audit(db, actor, f"{action}_news", news_id, {"from": previous, "to": target})
-            return self._public_news(json.loads(row["data"]), status=target, updated_at=stamp)
+            return self._public_news(
+                json.loads(row["data"]),
+                status=target,
+                updated_at=stamp,
+                needs_prayer=row["needs_prayer"],
+                prayer_excluded=row["prayer_excluded"],
+            )
 
     @staticmethod
     def _publishable_ids(db) -> list[str]:
@@ -721,7 +858,16 @@ class AdminStore:
                 rows = db.execute("SELECT * FROM news WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
             else:
                 rows = db.execute("SELECT * FROM news ORDER BY created_at DESC, id DESC").fetchall()
-            items = [self._public_news(json.loads(row["data"]), status=row["status"], updated_at=row["updated_at"]) for row in rows]
+            items = [
+                self._public_news(
+                    json.loads(row["data"]),
+                    status=row["status"],
+                    updated_at=row["updated_at"],
+                    needs_prayer=row["needs_prayer"],
+                    prayer_excluded=row["prayer_excluded"],
+                )
+                for row in rows
+            ]
             return {"items": items, "publishable": len(self._publishable_ids(db))}
 
     def list_news(self, status: str | None = None) -> list[dict]:
@@ -737,6 +883,7 @@ class AdminStore:
         if expected_count is not None and (type(expected_count) is not int or expected_count < 0):
             raise ApiError(400, "invalid_expected_count", "期望条数须为非负整数。")
         with self._db() as db:
+            before = self._news_public_sets(db)
             ids = self._publishable_ids(db)
             count = len(ids)
             if expected_count is not None and expected_count != count:
@@ -755,10 +902,140 @@ class AdminStore:
                     )
                     if db.execute("SELECT changes()").fetchone()[0] != 1:
                         raise ApiError(409, "count_mismatch", "待公开条目在写入时发生变化，请重新确认。")
-                self._bump(db)
+            self._bump_if_news_public_changed(db, before)
             version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
             self._audit(db, actor, "publish_verified_news", None, {"published": count, "ids": ids})
             return {"published": count, "version": version}
+
+    def _require_news_row(self, db, news_id: str):
+        if not isinstance(news_id, str) or not re.fullmatch(r"news-[0-9]{8}-[a-f0-9]{12}", news_id):
+            raise ApiError(404, "news_not_found", "动态不存在。")
+        row = db.execute("SELECT * FROM news WHERE id=?", (news_id,)).fetchone()
+        if not row:
+            raise ApiError(404, "news_not_found", "动态不存在。")
+        return row
+
+    def set_news_prayer(self, actor: str, news_id: str, needs_prayer: bool) -> dict:
+        """Mark or clear the manual prayer flag.
+
+        Setting the flag publishes a pending or rejected row in the same
+        transaction and clears an exclusion, so the explicit action is visible.
+        Clearing the flag does not unpublish and does not by itself block the
+        keyword rule. Rows are never deleted.
+        """
+        if type(needs_prayer) is not bool:
+            raise ApiError(400, "invalid_needs_prayer", "needs_prayer 须为布尔值。")
+        with self._db() as db:
+            before = self._news_public_sets(db)
+            row = self._require_news_row(db, news_id)
+            previous = row["status"]
+            target = "published" if needs_prayer else previous
+            excluded = 0 if needs_prayer else int(row["prayer_excluded"] or 0)
+            flag = 1 if needs_prayer else 0
+            stamp = row["updated_at"]
+            changed = previous != target or int(row["needs_prayer"] or 0) != flag or int(row["prayer_excluded"] or 0) != excluded
+            if changed:
+                stamp = _now()
+                db.execute(
+                    "UPDATE news SET status=?, needs_prayer=?, prayer_excluded=?, updated_at=? WHERE id=?",
+                    (target, flag, excluded, stamp, news_id),
+                )
+            self._bump_if_news_public_changed(db, before)
+            if changed:
+                self._audit(db, actor, "set_news_prayer", news_id, {
+                    "needs_prayer": needs_prayer, "from": previous, "to": target,
+                })
+            version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+            item = self._public_news(
+                json.loads(row["data"]), status=target, updated_at=stamp,
+                needs_prayer=flag, prayer_excluded=excluded,
+            )
+            return {"item": item, "version": version}
+
+    def set_news_prayer_exclusion(self, actor: str, news_id: str, excluded: bool) -> dict:
+        """Exclude or restore one row from automatic and manual prayer routing.
+
+        Exclusion wins over the keyword rule and a manual mark, and puts a
+        published row back on the news list. The news row is kept.
+        """
+        if type(excluded) is not bool:
+            raise ApiError(400, "invalid_excluded", "excluded 须为布尔值。")
+        with self._db() as db:
+            before = self._news_public_sets(db)
+            row = self._require_news_row(db, news_id)
+            flag = 1 if excluded else 0
+            stamp = row["updated_at"]
+            changed = int(row["prayer_excluded"] or 0) != flag
+            if changed:
+                stamp = _now()
+                db.execute(
+                    "UPDATE news SET prayer_excluded=?, updated_at=? WHERE id=?",
+                    (flag, stamp, news_id),
+                )
+            self._bump_if_news_public_changed(db, before)
+            if changed:
+                self._audit(db, actor, "set_news_prayer_exclusion", news_id, {"excluded": excluded})
+            version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+            item = self._public_news(
+                json.loads(row["data"]),
+                status=row["status"],
+                updated_at=stamp,
+                needs_prayer=row["needs_prayer"],
+                prayer_excluded=flag,
+            )
+            return {"item": item, "version": version}
+
+    def prayer_requests(self) -> dict:
+        """Published rows routed to the prayer page. No admin fields."""
+        with self._db() as db:
+            db.execute("BEGIN")
+            items = []
+            rows = db.execute(
+                "SELECT data, needs_prayer, prayer_excluded FROM news WHERE status='published'"
+            ).fetchall()
+            for row in rows:
+                data = json.loads(row["data"])
+                if not on_prayer_page(
+                    data,
+                    status="published",
+                    needs_prayer=row["needs_prayer"],
+                    prayer_excluded=row["prayer_excluded"],
+                ):
+                    continue
+                items.append({
+                    "id": data["id"],
+                    "title": data["title"],
+                    "summary": data["summary"],
+                    "sourceName": data["source_name"],
+                    "sourceUrl": data["source_url"],
+                    "date": data["date"],
+                    "region": data["region"],
+                    "verified": data.get("verified") is True,
+                })
+            items.sort(key=lambda item: (item["date"], item["id"]), reverse=True)
+            version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+            return {"version": version, "items": items}
+
+    def reader_prayer_items(self) -> list[dict]:
+        """Reader-shaped copies of the public prayer feed. Not an admin payload."""
+        items = []
+        for item in self.prayer_requests()["items"]:
+            items.append({
+                "id": item["id"],
+                "kind": "news",
+                "date": item["date"],
+                "channel": NEWS_CHANNEL,
+                "label": "需要祷告",
+                "title": item["title"],
+                "excerpt": item["summary"],
+                "summary": item["summary"],
+                "sourceName": item["sourceName"],
+                "sourceUrl": item["sourceUrl"],
+                "region": item["region"],
+                "verified": item["verified"],
+                "category": "需要祷告",
+            })
+        return items
 
 
 def create_admin_store(data_dir, seed_file=None, **kwargs):
@@ -936,7 +1213,7 @@ class AdminRequestMixin:
                 opened = True
             if not opened:
                 return False
-        if not (path == "/api/content" or path.startswith("/api/admin/") or path == "/api/admin" or path == "/api/ingest/news"):
+        if not (path == "/api/content" or path == "/api/prayer-requests" or path.startswith("/api/admin/") or path == "/api/admin" or path == "/api/ingest/news"):
             return False
         try:
             # Ingest uses its own limiter so a submitting bot cannot consume
@@ -975,6 +1252,12 @@ class AdminRequestMixin:
                 raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
             payload = store.content(public=True)
             self._api_json(200, payload, cache_control="public, max-age=30, s-maxage=30, stale-while-revalidate=60", etag=f'"content-{payload["version"]}"')
+            return
+        if path == "/api/prayer-requests":
+            if method not in ("GET", "HEAD"):
+                raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
+            payload = store.prayer_requests()
+            self._api_json(200, payload, cache_control="public, max-age=30, s-maxage=30, stale-while-revalidate=60", etag=f'"prayer-requests-{payload["version"]}"')
             return
         if path == "/api/admin/login" and method == "POST":
             self._same_origin(required=True)
@@ -1042,6 +1325,20 @@ class AdminRequestMixin:
                 if type(expected) is not int or expected < 0:
                     raise ApiError(400, "invalid_expected_count", "期望条数须为非负整数。")
             self._api_json(200, store.publish_verified_news(user["id"], expected))
+            return
+        prayer_match = re.fullmatch(r"/api/admin/news/(news-[0-9]{8}-[a-f0-9]{12})/prayer", path)
+        if prayer_match and method == "POST":
+            data = self._json_body()
+            if set(data) != {"needs_prayer"}:
+                raise ApiError(400, "unknown_field", "祷告标记只接受 needs_prayer。")
+            self._api_json(200, store.set_news_prayer(user["id"], prayer_match.group(1), data.get("needs_prayer")))
+            return
+        exclusion_match = re.fullmatch(r"/api/admin/news/(news-[0-9]{8}-[a-f0-9]{12})/prayer-exclusion", path)
+        if exclusion_match and method == "POST":
+            data = self._json_body()
+            if set(data) != {"excluded"}:
+                raise ApiError(400, "unknown_field", "排除标记只接受 excluded。")
+            self._api_json(200, store.set_news_prayer_exclusion(user["id"], exclusion_match.group(1), data.get("excluded")))
             return
         news_match = re.fullmatch(r"/api/admin/news/(news-[0-9]{8}-[a-f0-9]{12})/(publish|reject)", path)
         if news_match and method == "POST":

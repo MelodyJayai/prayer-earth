@@ -254,7 +254,8 @@ class SpaHandler(AdminRequestMixin, SimpleHTTPRequestHandler):
         if path.startswith("/reader/"):
             if path == "/reader/":
                 path = "/reader/index.html"
-            markup = _reader.render_feed_reader(path, self.server.admin_store.public_items())
+            store = self.server.admin_store
+            markup = _reader.render_feed_reader(path, store.public_items(), prayer_items=store.reader_prayer_items())
             if markup is None:
                 self.send_error(404, "Content not found")
             else:

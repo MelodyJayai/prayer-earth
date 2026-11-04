@@ -167,6 +167,60 @@ openssl rand -hex 32
 
 公开错了没有批量撤回。在「宗教动态」里对已公开条目逐条点「驳回」。每一条从已公开变为驳回都会再把 `version` 加 1，备用站会再发一版，该条从主应用和备用阅读站消失。其余已公开条目不受影响。
 
+## 需要祷告
+
+祷告页不再使用 4 条种子。它读取已公开、并且被分流到祷告页的宗教动态。这是展示层分流：行仍留在 `news` 表里，不删除。
+
+分流规则（同时满足才进入祷告页，并从宗教动态列表移出）：
+
+1. `status` 是 `published`
+2. `prayer_excluded` 不是 1
+3. 并且下面任一成立：
+   - `needs_prayer` 是 1（同工手动标记）
+   - `verified` 是 JSON 布尔值 `true`，且标题或摘要命中关键词（自动放行）
+
+关键词只匹配标题和摘要，不看地区、来源名或链接，避免过宽。表在 `scripts/admin_backend.py` 的 `PRAYER_CANDIDATE_KEYWORDS`：迫害、逾捕、监禁、袭击教会、杀害、绑架、禁教、拘留、关闭教会、拘押、persecution。英文不区分大小写。`verified` 为字符串 `"true"`、数字或缺失时不算已核实，不会自动放行。
+
+未核实的条目即使命中关键词也不会自动出现。同工在「迫害筛选」里点「设为需要祷告」后才会进入祷告页，主应用标「待核实」。待审条目点这个按钮会在同一次写入里公开。已经排除的条目再点「设为需要祷告」会清掉排除。
+
+「排除」把 `prayer_excluded` 设为 1。排除优先于自动放行，也优先于当时的手动标记：条目离开祷告页；若仍是已公开，就回到宗教动态列表。取消排除后，仍符合自动规则或仍有手动标记的条目会重新进入祷告页。取消手动标记不会取消排除；若它仍是未排除的已核实候选，自动规则继续生效，应改点「排除」。
+
+旧库在进程打开数据库时自动升级：缺列就 `ALTER TABLE` 增加 `needs_prayer` 和 `prayer_excluded`，默认 0，不改已有 JSON、状态或内容版本。升级前先备份 `data/`。
+
+### 公开读接口
+
+`GET /api/prayer-requests` 和 `HEAD`。不需要登录。只返回已分流的条目，按 `date`、`id` 从新到旧：
+
+```json
+{
+  "version": 12,
+  "items": [
+    {
+      "id": "news-20261027-0123456789ab",
+      "title": "标题",
+      "summary": "短摘要",
+      "sourceName": "来源名",
+      "sourceUrl": "https://example.com/story",
+      "date": "2026-10-27",
+      "region": "地区",
+      "verified": false
+    }
+  ]
+}
+```
+
+`id` 只用于本机记住「你已为此祷告」，不是管理字段。响应里没有 `status`、`needsPrayer`、`prayerExcluded`、`prayerCandidate`。`version` 与 `GET /api/content` 的 `version` 是同一个计数。缓存、`ETag`（`prayer-requests-<version>`）、`X-Content-Type-Options` 和 `Referrer-Policy` 与 `/api/content` 相同。其他方法返回 405。写请求限流不作用在这个 GET 上。
+
+这些条目不会出现在 `GET /api/content`、主应用「动态」、`/reader/news.html`、`/reader/index.html` 的全部列表，以及备用站快照的对应页面。它们出现在主应用祷告页、`/reader/prayers.html` 和备用站的「需要祷告」。来源仍是 `http`/`https`，`target="_blank"` 与 `rel="noopener noreferrer"`。
+
+宗教动态列表或祷告页的成员变化时，内容 `version` 加 1，并且只加 1。因此 `/api/content` 的 ETag、快照 `contentVersion` 和阅读页 HTML 一起变，备用站签名跟着变。成员没变（重复标记、重复排除、待审入库）不加版本。只驳回一条原本不在任一公开列表的待审，版本也不加。
+
+`POST /api/admin/news/<id>/prayer`，正文只能是 `{ "needs_prayer": true }` 或 `{ "needs_prayer": false }`。`POST /api/admin/news/<id>/prayer-exclusion`，正文只能是 `{ "excluded": true }` 或 `{ "excluded": false }`。会话、`X-CSRF-Token`、同源检查、临时密码限制和写限流与单条审核相同。编辑同工和管理员都可以操作。布尔值不能写成字符串。
+
+主应用用同源 `GET /api/prayer-requests`，不打开 `EXPO_PUBLIC_ENABLE_REMOTE_CONTENT`。接口失败或列表为空时分别显示「暂时无法读取需要代祷的动态」和「暂无需要代祷的动态」，不用种子顶上。代祷人数不由服务端提供；「我来祷告」只写在本机。本机发布的祷告仍留在 AsyncStorage，旧的 v3 快照（含曾经存下的种子）升级时不丢。
+
+备用阅读页导航增加「需要祷告」。即使还没有分流条目，下一次快照的各页导航也会变，从而产生一次新签名。发布脚本原有的 http/https 外链放行已经覆盖祷告页上的来源链接，不需要再放宽；`javascript:` 仍然拒绝。没有 `prayers.html` 的旧快照仍能通过校验。
+
 备用站 Worker 没有改。`/admin`、`/api/content` 仍然不是静态文件，请求落到 Worker 后继续是 404；其他方法继续是 405。发布脚本只放行文字动态上的外链来源，不放行 `javascript:`、协议相对链接或脚本。`/admin` 和 `api/content` 也仍然不能作为快照路径。
 
 部署本功能后，阅读页导航会多出「宗教动态」，即使还没有公开动态，下一次快照的 HTML 也会变，从而产生一次新签名。那次发布之后，仅有待审或驳回记录不会再改变签名。
@@ -183,7 +237,7 @@ Web 仍先读 `/api/content`，失败时继续使用随包图片。原生端不�
 npm run typecheck
 npm run lint
 npm test
-python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher scripts.test_import_wechat_source
+python -m unittest scripts.test_admin_backend scripts.test_generate_reader scripts.test_resilience_tools scripts.test_reader_publisher scripts.test_import_wechat_source scripts.test_serve_static
 npm run build:web
 ```
 
@@ -219,7 +273,10 @@ curl -s http://127.0.0.1:18080/api/content
 - 公开一条之后，`version` 增加，主站阅读页和稍后的备用站都能看到摘要与来源，待审和驳回的仍不可见。
 - 一键公开前记下 `GET /api/admin/news` 的 `publishable`，以及 `/api/content` 的 `version`。确认框里的条数应与 `publishable` 一致。只点一次并确认后，`version` 只加 1；`verified` 不是布尔值 `true` 的待审、已驳回和原先已公开的条目状态不变。条数为 0 时按钮不可用，直接调用接口也不会增加 `version`。
 - 若要撤回，在后台对不该公开的条目逐条驳回，并确认每驳回一条 `version` 再加 1、该条从公开列表消失。
-- 备用站上 `/admin` 与 `/api/content` 仍是 404，POST 仍是 405。
+- 数据库迁移前备份 `/opt/prayer-earth-trial/data`（至少包含 `admin.sqlite3`）。打开服务后旧库应自动多出 `needs_prayer` 和 `prayer_excluded`，已有行仍在，两列默认为 0。
+- 用一条测试动态确认：已核实且标题含「迫害」一类关键词的，公开后出现在 `/api/prayer-requests` 和 `/reader/prayers.html`，不出现在 `/api/content` 和 `/reader/news.html`。排除后回到后两处，祷告页不再列出，数据库里仍能看到该行。未核实的同类标题不会自动出现，手动标记后才出现并带「待核实」。
+- `GET /api/content` 与快照 `health.json` 的 `contentVersion` 在同一次分流后相等，并且只加 1。备用站签名应变化。`/api/prayer-requests` 的响应里没有 `status` 或 `needsPrayer`。
+- 备用站上 `/admin` 与 `/api/content` 仍是 404，POST 仍是 405。`/reader/prayers.html` 在新快照里应可打开；来源链接仍只接受 http/https。
 - 发布机上的 `deploy-reader-failover.py` 要先于第一条带外链的动态更新。旧校验器会拒绝外部来源链接，失败时会保留上一份完整快照。
 - 现有图片库（`assets/content`、`docs/content-import-manifest.json`、`src/contentData.ts`）不应有改动。
 - 部署仍会整目录替换 `/opt/prayer-earth-trial/site`。`/opt/prayer-earth-trial/data`（含 `admin.sqlite3` 和上传图片）不在替换范围内，新闻行写在这个库的 `news` 表里，备份任务会随 SQLite 一致性备份带走。

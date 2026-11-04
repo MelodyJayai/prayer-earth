@@ -66,3 +66,34 @@ describe("一键公开已核实确认", () => {
     expect(ui.html).toContain("expected_count");
   });
 });
+
+function loadPrayerFilterUi() {
+  const html = readFileSync("scripts/admin.html", "utf8");
+  const matched = html.match(/\/\* prayer-filter-ui \*\/([\s\S]*?)\/\* \/prayer-filter-ui \*\//);
+  if (!matched) throw new Error("admin.html 缺少 prayer-filter-ui");
+  const sandbox = {};
+  runInNewContext(`${matched[1]}\nthis.exports = { prayerFilterVisible, prayerFilterAction };`, sandbox);
+  return { html, ...sandbox.exports };
+}
+
+describe("迫害筛选", () => {
+  const ui = loadPrayerFilterUi();
+
+  it("只把待审和已公开放进筛选，并按排除、自动放行、手动标记决定按钮", () => {
+    expect(ui.prayerFilterVisible({ status: "pending" })).toBe(true);
+    expect(ui.prayerFilterVisible({ status: "published" })).toBe(true);
+    expect(ui.prayerFilterVisible({ status: "rejected" })).toBe(false);
+    const auto = { status: "published", verified: true, prayerCandidate: true, onPrayerPage: true, needsPrayer: false, prayerExcluded: false };
+    expect(ui.prayerFilterAction(auto)).toBe("exclude");
+    expect(ui.prayerFilterAction({ ...auto, prayerExcluded: true, onPrayerPage: false })).toBe("unexclude");
+    expect(ui.prayerFilterAction({ status: "published", verified: false, prayerCandidate: true, onPrayerPage: false, needsPrayer: false })).toBe("mark");
+    expect(ui.prayerFilterAction({ status: "published", verified: false, prayerCandidate: true, onPrayerPage: true, needsPrayer: true })).toBe("unmark");
+  });
+
+  it("页面提供设为需要祷告、取消和排除", () => {
+    expect(ui.html).toContain('id="tab-prayer-filter"');
+    expect(ui.html).toContain("设为需要祷告");
+    expect(ui.html).toContain("/prayer-exclusion");
+    expect(ui.html).toContain("needs_prayer");
+  });
+});

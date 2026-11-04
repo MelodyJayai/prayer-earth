@@ -37,6 +37,10 @@
 
 部署脚本仍会把远端 `/opt/prayer-earth-trial/site` 整目录换成新的 `dist`，并删掉刚换下的 `site.previous`。上线前先把当前 `site` 另存备份，再把旧目录里有、新包里没有的图片并进新目录，然后才切换。内容数据库在 `data/`，不在这次被替换的 `site` 里。
 
+这次上线会在打开数据库时给 `news` 表补上 `needs_prayer` 和 `prayer_excluded`（默认 0）。切换前先备份 `/opt/prayer-earth-trial/data`，至少复制 `admin.sqlite3` 及其 WAL。迁移不删行；若要回滚代码，先停服务，用这份备份换回数据库，再换回上一版 `site`。不要在未备份时删掉新列。
+
+祷告页是 `GET /api/prayer-requests`（同源，只读）。已分流的动态不在 `GET /api/content` 里重复出现。两边的 `version` 相同；分流变化时这个版本加 1，备用站快照会连同 `reader/prayers.html` 一起变，签名随之变化。备用站仍不提供 `/api/content` 或 `/api/prayer-requests`。
+
 ## 2026-10-18 Error 1033 修复
 
 同工截图显示 Cloudflare Error 1033。排查确认网页和隧道两个服务均为 `disabled`、`inactive`，Cloudflare 报隧道 `inactive`、连接数 0。此前部署的最后一步 SSH 启动命令未成功完成，上传文件不等于站点已就绪。

@@ -15,7 +15,7 @@ const tabRoutes: Record<AppTab, Href> = {
 
 export default function HomeRoute() {
   const router = useRouter();
-  const { prayers, togglePrayer } = usePrayers();
+  const { prayers, feedStatus, togglePrayer } = usePrayers();
   const { items } = useContentFeed();
   const openPrayer = useCallback(
     (id: string) => router.push({ pathname: "/prayer/[id]", params: { id } }),
@@ -31,6 +31,7 @@ export default function HomeRoute() {
         <HomeScreen
           wide={wide}
           prayers={prayers}
+          feedStatus={feedStatus}
           contentItems={items}
           onPray={togglePrayer}
           onOpen={openPrayer}
