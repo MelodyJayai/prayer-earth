@@ -12,7 +12,11 @@ directory MUST be outside the static document root. Seed JSON is an array or
 it returns False once any account exists. It never stores cleartext passwords.
 All Store validation failures raise ApiError(status, code, message). HTTP errors
 have {error, message}. A publish-count mismatch also includes ``actual``.
-Public and authenticated responses are never cached.
+``/api/content`` and ``/api/prayer-requests`` may be cached for 30 seconds.
+Their ETag is the shared content version plus a short hash of the returned
+item ids. Authenticated responses are not cached. The failover signature
+does not read that ETag; it still uses snapshot file hashes and
+``contentVersion``.
 """
 from __future__ import annotations
 
@@ -281,6 +285,24 @@ def _flag_on(value: object) -> bool:
     return value == 1 or value is True
 
 
+PUBLIC_FEED_CACHE_CONTROL = "public, max-age=30, s-maxage=30, stale-while-revalidate=60"
+_FEED_ETAG_HASH_HEX = 16
+
+
+def feed_etag(prefix: str, version: int, items: list[dict]) -> str:
+    """Quoted strong validator: content version plus the returned id set.
+
+    Ids are deduped, sorted, and joined with newlines before SHA-256. The
+    first 16 hex characters are the suffix. The same ids in any order share
+    one hash, so a routing change that does not bump ``version`` still
+    changes the validator. This hash is not an input to the failover
+    signature, and computing it does not write the version counter.
+    """
+    ids = sorted({str(item["id"]) for item in items})
+    digest = hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()[:_FEED_ETAG_HASH_HEX]
+    return f'"{prefix}-{int(version)}-{digest}"'
+
+
 def on_prayer_page(data: object, *, status: str, needs_prayer: object, prayer_excluded: object) -> bool:
     """Whether a row is shown on the prayer page instead of the news list.
 
@@ -433,6 +455,10 @@ class AdminStore:
         Moving a row between the news list and the prayer page changes both
         what the content feed returns and the reader HTML, so the version and
         the snapshot signature move together. A no-op leaves the version alone.
+
+        Public ETags also hash the returned ids. That hash does not replace
+        this bump and is not part of ``signature()``: a code deploy can
+        reclassify rows without a write, and only the hash changes then.
         """
         if self._news_public_sets(db) != before:
             self._bump(db)
@@ -1251,13 +1277,21 @@ class AdminRequestMixin:
             if method not in ("GET", "HEAD"):
                 raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
             payload = store.content(public=True)
-            self._api_json(200, payload, cache_control="public, max-age=30, s-maxage=30, stale-while-revalidate=60", etag=f'"content-{payload["version"]}"')
+            self._api_json(
+                200, payload,
+                cache_control=PUBLIC_FEED_CACHE_CONTROL,
+                etag=feed_etag("content", payload["version"], payload["items"]),
+            )
             return
         if path == "/api/prayer-requests":
             if method not in ("GET", "HEAD"):
                 raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
             payload = store.prayer_requests()
-            self._api_json(200, payload, cache_control="public, max-age=30, s-maxage=30, stale-while-revalidate=60", etag=f'"prayer-requests-{payload["version"]}"')
+            self._api_json(
+                200, payload,
+                cache_control=PUBLIC_FEED_CACHE_CONTROL,
+                etag=feed_etag("prayer-requests", payload["version"], payload["items"]),
+            )
             return
         if path == "/api/admin/login" and method == "POST":
             self._same_origin(required=True)

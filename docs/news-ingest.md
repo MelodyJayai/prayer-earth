@@ -209,11 +209,19 @@ openssl rand -hex 32
 }
 ```
 
-`id` 只用于本机记住「你已为此祷告」，不是管理字段。响应里没有 `status`、`needsPrayer`、`prayerExcluded`、`prayerCandidate`。`version` 与 `GET /api/content` 的 `version` 是同一个计数。缓存、`ETag`（`prayer-requests-<version>`）、`X-Content-Type-Options` 和 `Referrer-Policy` 与 `/api/content` 相同。其他方法返回 405。写请求限流不作用在这个 GET 上。
+`id` 只用于本机记住「你已为此祷告」，不是管理字段。响应里没有 `status`、`needsPrayer`、`prayerExcluded`、`prayerCandidate`。`version` 与 `GET /api/content` 的 `version` 是同一个计数，计算 ETag 不会改这个数。两个接口的 `Cache-Control` 都是 `public, max-age=30, s-maxage=30, stale-while-revalidate=60`，并带 `X-Content-Type-Options: nosniff` 和 `Referrer-Policy: same-origin`。其他方法返回 405。写请求限流不作用在这个 GET 上。
+
+ETag 是带引号的强校验值。`/api/content` 为 `"content-<version>-<哈希>"`，`/api/prayer-requests` 为 `"prayer-requests-<version>-<哈希>"`。哈希是这次响应里条目 `id` 集合的短哈希：去重后按字典序排列，用换行符接成 UTF-8，取 SHA-256 的前 16 位十六进制。顺序不同、集合相同，哈希相同。集合变了，即使 `version` 仍是原数，对应接口的 ETag 也会变。`If-None-Match` 与当前 ETag 整段相同则返回 304，并带上同一条 `Cache-Control` 和 `ETag`，不带正文。旧格式 `"content-<version>"` 和 `"prayer-requests-<version>"` 不再命中。轻量阅读页、`/reader/*.html` 和备用站 Worker 不发送 ETag，这次没有改它们的缓存头。
 
 这些条目不会出现在 `GET /api/content`、主应用「动态」、`/reader/news.html`、`/reader/index.html` 的全部列表，以及备用站快照的对应页面。它们出现在主应用祷告页、`/reader/prayers.html` 和备用站的「需要祷告」。来源仍是 `http`/`https`，`target="_blank"` 与 `rel="noopener noreferrer"`。
 
-宗教动态列表或祷告页的成员变化时，内容 `version` 加 1，并且只加 1。因此 `/api/content` 的 ETag、快照 `contentVersion` 和阅读页 HTML 一起变，备用站签名跟着变。成员没变（重复标记、重复排除、待审入库）不加版本。只驳回一条原本不在任一公开列表的待审，版本也不加。
+宗教动态列表或祷告页的成员变化（公开、驳回、标记、排除，且公开集合真的有增减）时，内容 `version` 加 1，并且只加 1。成员没变（重复标记、重复排除、待审入库）不加版本。只驳回一条原本不在任一公开列表的待审，版本也不加。这次没有改这些计数规则。
+
+备用站签名不读 API 的 ETag。`scripts/deploy-reader-failover.py` 的 `signature()` 仍只覆盖快照文件哈希、`contentVersion`、Worker 脚本哈希、静态资源配置，以及账户、Worker 名和主机名。`contentVersion` 就是上面的 `version`。因此：
+
+- 成员变化的写入仍让 `version` 加 1。阅读页 HTML 跟着变，文件哈希和 `contentVersion` 一起变，签名变，发布任务会部署。这与改 ETag 之前相同。
+- 只改分流代码、数据库没有对应写入时，计数不加。2026-11-04 上线后，已公开的 13 条被新规则划到祷告页，`/api/content` 从 277 条变成 264 条，`version` 仍是 4。下一次快照的 HTML 成员变了，文件哈希仍会让签名变化。在此之前 API 的 ETag 只有 `version`，带 `If-None-Match: "content-4"` 的浏览器或边缘会一直得到 304，继续显示旧列表。`/api/prayer-requests` 的 ETag 同样只跟着 `version`。现在 id 集合哈希会让这两个 ETag 换成新值，旧格式不再 304。
+- 成员和 `version` 都没变时，id 集合哈希不变，ETag 不变，304 仍成立，签名也不变。正文修改若走原来的写入路径，仍靠 `version` 加 1 让 ETag 改变；哈希本身只覆盖 id 集合。
 
 `POST /api/admin/news/<id>/prayer`，正文只能是 `{ "needs_prayer": true }` 或 `{ "needs_prayer": false }`。`POST /api/admin/news/<id>/prayer-exclusion`，正文只能是 `{ "excluded": true }` 或 `{ "excluded": false }`。会话、`X-CSRF-Token`、同源检查、临时密码限制和写限流与单条审核相同。编辑同工和管理员都可以操作。布尔值不能写成字符串。
 
@@ -275,7 +283,8 @@ curl -s http://127.0.0.1:18080/api/content
 - 若要撤回，在后台对不该公开的条目逐条驳回，并确认每驳回一条 `version` 再加 1、该条从公开列表消失。
 - 数据库迁移前备份 `/opt/prayer-earth-trial/data`（至少包含 `admin.sqlite3`）。打开服务后旧库应自动多出 `needs_prayer` 和 `prayer_excluded`，已有行仍在，两列默认为 0。
 - 用一条测试动态确认：已核实且标题含「迫害」一类关键词的，公开后出现在 `/api/prayer-requests` 和 `/reader/prayers.html`，不出现在 `/api/content` 和 `/reader/news.html`。排除后回到后两处，祷告页不再列出，数据库里仍能看到该行。未核实的同类标题不会自动出现，手动标记后才出现并带「待核实」。
-- `GET /api/content` 与快照 `health.json` 的 `contentVersion` 在同一次分流后相等，并且只加 1。备用站签名应变化。`/api/prayer-requests` 的响应里没有 `status` 或 `needsPrayer`。
+- `GET /api/content` 与快照 `health.json` 的 `contentVersion` 在同一次分流写入后相等，并且只加 1。备用站签名应变化。`/api/prayer-requests` 的响应里没有 `status` 或 `needsPrayer`。
+- 部署后用 `If-None-Match: "content-<当前 version>"`（没有短哈希）请求 `/api/content`，应得到 200 和新的 ETag，而不是 304。再用响应里的新 ETag 请求一次，应得到 304，`Cache-Control` 仍是 30 秒。`/api/prayer-requests` 同样。这次缓存修复不必让 `version` 增加。
 - 备用站上 `/admin` 与 `/api/content` 仍是 404，POST 仍是 405。`/reader/prayers.html` 在新快照里应可打开；来源链接仍只接受 http/https。
 - 发布机上的 `deploy-reader-failover.py` 要先于第一条带外链的动态更新。旧校验器会拒绝外部来源链接，失败时会保留上一份完整快照。
 - 现有图片库（`assets/content`、`docs/content-import-manifest.json`、`src/contentData.ts`）不应有改动。
