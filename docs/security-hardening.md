@@ -11,7 +11,7 @@
 - 管理 Cookie 使用 `HttpOnly`、`Secure`、`SameSite=Strict`；写操作需要 CSRF 和同源校验。
 - 全站增加 HSTS、CSP、`X-Frame-Options`、`nosniff`、`Permissions-Policy` 和 CORP 响应头。
 - 不存在的扫描路径和点文件路径返回 404，不再统一回退到首页。
-- `/api/content` 使用内容版本 ETag 和短时间缓存，减少重复全量序列化。
+- `/api/content` 和 `/api/prayer-requests` 使用 30 秒公共缓存。ETag 同时包含内容版本和本次返回条目 id 的短哈希；分流成员变了，即使版本数字没变也会失效。相同 ETag 仍返回 304。阅读页和备用站不发送这对 ETag。
 - 每 15 分钟生成一次 SQLite 一致性备份，保留最近 14 份。
 - 每 15 分钟生成一次不含数据库和管理接口的静态阅读快照，保存在服务器的 `snapshots/current`。
 - `reader.bytelanework.com` 发布为完整的 Workers Static Assets 只读镜像；发布电脑仅上传已发布快照，备用站无回源、无管理入口、无写接口。

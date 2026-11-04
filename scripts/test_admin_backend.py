@@ -5,6 +5,7 @@ Run with ``python -m unittest scripts.test_admin_backend``.
 """
 from __future__ import annotations
 
+import hashlib
 import http.client
 import io
 import json
@@ -97,6 +98,10 @@ def news_payload(**overrides):
 
 class Handler(AdminRequestMixin, BaseHTTPRequestHandler):
     def do_GET(self):  # noqa: N802
+        if not self.handle_admin_request():
+            self.send_error(404)
+
+    def do_HEAD(self):  # noqa: N802
         if not self.handle_admin_request():
             self.send_error(404)
 
@@ -840,6 +845,139 @@ class PrayerColumnMigrationTests(unittest.TestCase):
         with restarted._db() as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM news").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0], 7)
+
+
+class PublicFeedEtagTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.data = Path(self.tmp.name) / "private"
+        self.store = AdminStore(self.data, secure_cookies=False)
+        self.httpd = start_server(self.store)
+        self.port = self.httpd.server_address[1]
+
+    def tearDown(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+        self.tmp.cleanup()
+
+    def test_feed_etag_is_version_plus_id_set_hash(self):
+        digest = hashlib.sha256("a\nb".encode()).hexdigest()[:16]
+        expected = f'"content-4-{digest}"'
+        self.assertEqual(admin_backend.feed_etag("content", 4, [{"id": "b"}, {"id": "a"}, {"id": "a"}]), expected)
+        self.assertEqual(admin_backend.feed_etag("content", 4, [{"id": "a"}, {"id": "b"}]), expected)
+        self.assertNotEqual(admin_backend.feed_etag("content", 4, [{"id": "a"}]), expected)
+        self.assertNotEqual(admin_backend.feed_etag("content", 5, [{"id": "a"}, {"id": "b"}]), expected)
+        self.assertNotEqual(admin_backend.feed_etag("prayer-requests", 4, [{"id": "a"}, {"id": "b"}]), expected)
+        self.assertNotEqual(expected, '"content-4"')
+        empty = hashlib.sha256(b"").hexdigest()[:16]
+        self.assertEqual(admin_backend.feed_etag("prayer-requests", 4, []), f'"prayer-requests-4-{empty}"')
+
+    def test_same_version_membership_change_changes_etag(self):
+        version = self._version()
+        first_content = self._get("/api/content")
+        first_prayer = self._get("/api/prayer-requests")
+        again_content = self._get("/api/content")
+        again_prayer = self._get("/api/prayer-requests")
+        self.assertEqual(again_content["etag"], first_content["etag"])
+        self.assertEqual(again_prayer["etag"], first_prayer["etag"])
+        self.assertEqual(first_content["version"], version)
+        self.assertEqual(first_prayer["version"], version)
+        self.assertEqual(self._version(), version)
+        self._assert_public_headers(first_content)
+        self._assert_public_headers(first_prayer)
+        self.assertEqual(first_content["etag"], admin_backend.feed_etag("content", version, first_content["items"]))
+        self.assertEqual(first_prayer["etag"], admin_backend.feed_etag("prayer-requests", version, first_prayer["items"]))
+
+        news_id = self._insert_published(title="教会周报", summary="短摘要", verified=False)
+        listed = self._get("/api/content")
+        prayers = self._get("/api/prayer-requests")
+        self.assertEqual(self._version(), version)
+        self.assertEqual(listed["version"], version)
+        self.assertIn(news_id, {item["id"] for item in listed["items"]})
+        self.assertEqual(prayers["items"], [])
+        self.assertNotEqual(listed["etag"], first_content["etag"])
+        self.assertEqual(prayers["etag"], first_prayer["etag"])
+        self.assertEqual(self._get("/api/content")["etag"], listed["etag"])
+
+        self._rewrite(news_id, summary="仍是同一条，没有关键词")
+        rewritten = self._get("/api/content")
+        self.assertEqual(self._version(), version)
+        self.assertEqual(rewritten["etag"], listed["etag"])
+        self.assertEqual(self._get("/api/prayer-requests")["etag"], prayers["etag"])
+
+        self._rewrite(news_id, title="信徒遭监禁", verified=True)
+        routed_content = self._get("/api/content")
+        routed_prayer = self._get("/api/prayer-requests")
+        self.assertEqual(self._version(), version)
+        self.assertEqual(routed_content["version"], version)
+        self.assertEqual(routed_prayer["version"], version)
+        self.assertNotIn(news_id, {item["id"] for item in routed_content["items"]})
+        self.assertEqual([item["id"] for item in routed_prayer["items"]], [news_id])
+        self.assertNotEqual(routed_content["etag"], listed["etag"])
+        self.assertNotEqual(routed_prayer["etag"], prayers["etag"])
+        self.assertEqual(routed_content["etag"], admin_backend.feed_etag("content", version, routed_content["items"]))
+        self.assertEqual(routed_prayer["etag"], admin_backend.feed_etag("prayer-requests", version, routed_prayer["items"]))
+        self.assertEqual(self._get("/api/content")["etag"], routed_content["etag"])
+        self.assertEqual(self._get("/api/prayer-requests")["etag"], routed_prayer["etag"])
+
+        for path, current, previous, legacy in (
+            ("/api/content", routed_content["etag"], listed["etag"], f'"content-{version}"'),
+            ("/api/prayer-requests", routed_prayer["etag"], prayers["etag"], f'"prayer-requests-{version}"'),
+        ):
+            hit = self._get(path, {"If-None-Match": current})
+            self.assertEqual(hit["status"], 304)
+            self.assertEqual(hit["body"], b"")
+            self.assertEqual(hit["etag"], current)
+            self.assertEqual(hit["headers"]["cache-control"], admin_backend.PUBLIC_FEED_CACHE_CONTROL)
+            head = self._get(path, {"If-None-Match": current}, method="HEAD")
+            self.assertEqual(head["status"], 304)
+            self.assertEqual(head["body"], b"")
+            self.assertEqual(head["etag"], current)
+            for stale in (previous, legacy, '"content-4"', '"prayer-requests-4"'):
+                missed = self._get(path, {"If-None-Match": stale})
+                self.assertEqual(missed["status"], 200, stale)
+                self.assertEqual(missed["etag"], current)
+                self._assert_public_headers(missed)
+                self.assertGreater(len(missed["body"]), 0)
+
+    def _version(self):
+        with self.store._db() as db:
+            return int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+
+    def _insert_published(self, **overrides):
+        record = self.store._normalize_news_item(news_payload(**overrides), 0)
+        with self.store._db() as db:
+            db.execute(
+                "INSERT INTO news(id,data,status,created_at,updated_at,needs_prayer,prayer_excluded) "
+                "VALUES (?,?,'published',?,?,0,0)",
+                (record["id"], json.dumps(record, ensure_ascii=False), "t0", "t1"),
+            )
+        return record["id"]
+
+    def _rewrite(self, news_id, **overrides):
+        with self.store._db() as db:
+            data = json.loads(db.execute("SELECT data FROM news WHERE id=?", (news_id,)).fetchone()["data"])
+            data.update(overrides)
+            db.execute("UPDATE news SET data=? WHERE id=?", (json.dumps(data, ensure_ascii=False), news_id))
+
+    def _get(self, path, headers=None, method="GET"):
+        status, response_headers, body = request_response(self.port, method, path, headers=headers)
+        payload = json.loads(body) if body else {}
+        return {
+            "status": status,
+            "headers": response_headers,
+            "body": body,
+            "etag": response_headers.get("etag", ""),
+            "version": payload.get("version"),
+            "items": payload.get("items", []),
+        }
+
+    def _assert_public_headers(self, response):
+        self.assertEqual(response["status"], 200)
+        self.assertEqual(response["headers"]["cache-control"], admin_backend.PUBLIC_FEED_CACHE_CONTROL)
+        self.assertEqual(response["headers"]["x-content-type-options"], "nosniff")
+        self.assertEqual(response["headers"]["referrer-policy"], "same-origin")
+        self.assertIn("application/json", response["headers"]["content-type"])
 
 
 def request_response(port, method, path, body=None, headers=None):

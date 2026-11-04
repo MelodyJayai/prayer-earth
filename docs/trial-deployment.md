@@ -39,7 +39,9 @@
 
 这次上线会在打开数据库时给 `news` 表补上 `needs_prayer` 和 `prayer_excluded`（默认 0）。切换前先备份 `/opt/prayer-earth-trial/data`，至少复制 `admin.sqlite3` 及其 WAL。迁移不删行；若要回滚代码，先停服务，用这份备份换回数据库，再换回上一版 `site`。不要在未备份时删掉新列。
 
-祷告页是 `GET /api/prayer-requests`（同源，只读）。已分流的动态不在 `GET /api/content` 里重复出现。两边的 `version` 相同；分流变化时这个版本加 1，备用站快照会连同 `reader/prayers.html` 一起变，签名随之变化。备用站仍不提供 `/api/content` 或 `/api/prayer-requests`。
+祷告页是 `GET /api/prayer-requests`（同源，只读）。已分流的动态不在 `GET /api/content` 里重复出现。两边的 `version` 相同；分流写入时这个版本加 1，备用站快照会连同 `reader/prayers.html` 一起变，签名随之变化。备用站仍不提供 `/api/content` 或 `/api/prayer-requests`。
+
+公开列表的 `Cache-Control` 仍是 `public, max-age=30, s-maxage=30, stale-while-revalidate=60`。ETag 在版本之外加上本次返回条目 id 的短哈希（`"content-<version>-<哈希>"` 与 `"prayer-requests-<version>-<哈希>"`）。后台分流写入仍只把 `version` 加 1。备用站签名仍按快照文件哈希和这个 `contentVersion` 变化，不读取 API 的 ETag。只改分流规则、版本数字不变时，下一份快照的 HTML 仍会改变文件哈希，签名因此变化；API 缓存则靠新的 ETag 失效，不再对旧的 `"content-<version>"` 返回 304。
 
 ## 2026-10-18 Error 1033 修复
 
