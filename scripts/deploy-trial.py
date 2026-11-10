@@ -64,6 +64,9 @@ User=prayer-web
 Group=prayer-web
 WorkingDirectory={REMOTE_ROOT}
 # Optional. Absent file leaves POST /api/ingest/news closed. Do not put the key in this unit.
+# The same file may set NEWS_AUTO_PUBLISH_VERIFIED and NEWS_SHOW_PUBLISH_VERIFIED_BUTTON.
+# Do not assign those variables here. Deploy must not create or rewrite that file,
+# or /etc/prayer-earth-news/switches.env, so an administrator's choice survives.
 EnvironmentFile=-/etc/prayer-earth-news/ingest.env
 ExecStart={PYTHON} {REMOTE_ROOT}/bin/serve-static.py --directory {REMOTE_ROOT}/site --data-directory {REMOTE_ROOT}/data --host 127.0.0.1 --port 18080
 Restart=on-failure
@@ -184,6 +187,7 @@ stage=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
     install -d -o root -g root -m 755 {REMOTE_ROOT}/site {REMOTE_ROOT}/bin
     install -d -o prayer-web -g prayer-web -m 700 {REMOTE_ROOT}/data {REMOTE_ROOT}/data/media {REMOTE_ROOT}/backups {REMOTE_ROOT}/snapshots
 install -d -o root -g cloudflared -m 750 /etc/prayer-earth-trial
+# Create the directory only. Never write ingest.env or switches.env.
 install -d -o root -g prayer-web -m 750 /etc/prayer-earth-news
 if [ -d "$stage/site" ]; then
   release=$(mktemp -d {REMOTE_ROOT}/.site-release.XXXXXX)

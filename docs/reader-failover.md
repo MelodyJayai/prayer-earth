@@ -5,7 +5,7 @@
 - 主站：<https://prayer.diagport.com>
 - 备用只读站：<https://reader.bytelanework.com>
 - 备用站只发布已发布的 HTML、图片、`manifest.json` 和 `health.json`；没有数据库、管理员入口、登录会话、草稿或写接口。
-- 快照里有「需要祷告」（`/reader/prayers.html`）。已经分流到祷告页的宗教动态不在「宗教动态」和全部列表里重复出现；排除或取消标记后会回到宗教动态页。来源外链沿用原来的 http/https 限制，祷告页不另开协议。没有这一页的旧快照仍可通过校验。分流写入会改变页面哈希，并把 `contentVersion` 加 1，签名因此变化。备用站本身没有 `/api/prayer-requests`，阅读页也不发送 ETag。主站 API 的 ETag（版本加返回条目 id 的短哈希）不是 `signature()` 的输入。只改分流代码、没有新的写入时，`contentVersion` 不加；下一份快照的 HTML 变了，文件哈希仍会让签名变化。
+- 快照里有「需要祷告」（`/reader/prayers.html`）。已经分流到祷告页的宗教动态不在「宗教动态」和全部列表里重复出现；排除或取消标记后会回到宗教动态页。来源外链沿用原来的 http/https 限制，祷告页不另开协议。没有这一页的旧快照仍可通过校验。分流写入会改变页面哈希，并把 `contentVersion` 加 1，签名因此变化。已核实宗教动态现在默认在提交时自动公开：每一批里只要有新的公开条目，`contentVersion` 加 1，快照哈希和签名一起变，发布任务会部署；同一批多条也只加 1 次。全是待审或重复编号时签名不变，不会因此重发。逐条撤下已公开动态会再加 1 次版本并再发一版。备用站本身没有 `/api/prayer-requests`，阅读页也不发送 ETag。主站 API 的 ETag（版本加返回条目 id 的短哈希）不是 `signature()` 的输入。只改分流代码、没有新的写入时，`contentVersion` 不加；下一份快照的 HTML 变了，文件哈希仍会让签名变化。
 - 备用站由 `prayer-reader-failover` Workers Static Assets 提供，固定绑定 `reader.bytelanework.com`；`workers.dev` 预览入口已关闭。
 
 ## 自动更新

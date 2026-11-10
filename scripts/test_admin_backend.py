@@ -148,13 +148,23 @@ class NewsIngestTests(unittest.TestCase):
         self.data = Path(self.tmp.name) / "private"
         self.store = AdminStore(self.data, secure_cookies=False)
         self.missing_key = Path(self.tmp.name) / "missing.key"
+        self.switch_file = Path(self.tmp.name) / "switches.env"
         self.key_patch = patch.object(admin_backend, "DEFAULT_INGEST_KEY_FILE", self.missing_key)
         self.key_patch.start()
+        self.switch_patch = patch.object(admin_backend, "NEWS_SWITCH_FILE", self.switch_file)
+        self.switch_patch.start()
         self.env_patch = without_ingest_config()
         self.env_patch.start()
+        self.flag_patch = patch.dict(os.environ, {
+            admin_backend.AUTO_PUBLISH_VERIFIED_ENV: "",
+            admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV: "",
+        }, clear=False)
+        self.flag_patch.start()
 
     def tearDown(self):
+        self.flag_patch.stop()
         self.env_patch.stop()
+        self.switch_patch.stop()
         self.key_patch.stop()
         self.tmp.cleanup()
 
@@ -321,6 +331,237 @@ class NewsIngestTests(unittest.TestCase):
             httpd.shutdown()
             httpd.server_close()
 
+    def test_verified_batch_auto_publishes_once_and_routes_persecution(self):
+        before = self._version()
+        created = self.store.ingest_news([
+            news_payload(verified=True, title="已核实周报", source_url="https://example.com/auto-home", published_at="2026-10-27T08:00:00Z"),
+            news_payload(verified=True, title="另一条已核实", source_url="https://example.com/auto-home-2", published_at="2026-10-26T08:00:00Z"),
+            news_payload(verified=False, title="未核实周报", source_url="https://example.com/auto-pending"),
+            news_payload(verified=True, title="信徒遭监禁", summary="需要代祷", source_url="https://example.com/auto-prayer", published_at="2026-10-28T08:00:00Z"),
+        ])
+        home_a, home_b, pending_id, prayer_id = created["inserted"]
+        self.assertEqual(created["ignored"], [])
+        self.assertEqual(created["published"], [home_a, home_b, prayer_id])
+        self.assertEqual(self._version(), before + 1)
+        self.assertEqual(self._statuses()[pending_id], "pending")
+        public_ids = {item["id"] for item in self.store.content(public=True)["items"]}
+        self.assertIn(home_a, public_ids)
+        self.assertIn(home_b, public_ids)
+        self.assertNotIn(pending_id, public_ids)
+        self.assertNotIn(prayer_id, public_ids)
+        prayers = self.store.prayer_requests()
+        self.assertEqual([item["id"] for item in prayers["items"]], [prayer_id])
+        self.assertTrue(prayers["items"][0]["verified"] is True)
+        self.assertEqual(prayers["version"], before + 1)
+        with self.store._db() as db:
+            detail = db.execute("SELECT detail FROM audit WHERE action='ingest_news'").fetchone()[0]
+        self.assertIn("auto-publish by ingest", detail)
+        self.assertNotIn("未核实周报", detail)
+        self.assertNotIn("https://example.com/auto-home", detail)
+
+    def test_auto_publish_etag_follows_version_and_returned_ids(self):
+        httpd = start_server(self.store)
+        port = httpd.server_address[1]
+        try:
+            status, headers, body = request_response(port, "GET", "/api/content")
+            self.assertEqual(status, 200)
+            before_etag = headers["etag"]
+            before_version = json.loads(body)["version"]
+            created = self.store.ingest_news([
+                news_payload(verified=True, title="首页动态", source_url="https://example.com/etag-home"),
+            ])
+            news_id = created["published"][0]
+            self.assertEqual(created["inserted"], [news_id])
+            status, headers, body = request_response(port, "GET", "/api/content")
+            payload = json.loads(body)
+            self.assertEqual(payload["version"], before_version + 1)
+            self.assertIn(news_id, {item["id"] for item in payload["items"]})
+            self.assertNotEqual(headers["etag"], before_etag)
+            self.assertEqual(headers["etag"], admin_backend.feed_etag("content", payload["version"], payload["items"]))
+            legacy = f'"content-{payload["version"]}"'
+            self.assertNotEqual(headers["etag"], legacy)
+            status, hit_headers, hit_body = request_response(
+                port, "GET", "/api/content", headers={"If-None-Match": headers["etag"]},
+            )
+            self.assertEqual(status, 304)
+            self.assertEqual(hit_body, b"")
+            self.assertEqual(hit_headers["etag"], headers["etag"])
+            self.assertEqual(hit_headers["cache-control"], admin_backend.PUBLIC_FEED_CACHE_CONTROL)
+            status, missed_headers, missed_body = request_response(
+                port, "GET", "/api/content", headers={"If-None-Match": legacy},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(missed_headers["etag"], headers["etag"])
+            self.assertIn(news_id, missed_body.decode())
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
+    def test_switch_off_keeps_verified_pending_until_the_next_request_enables_it(self):
+        for token in ("0", "false", "off", "OFF", " false ", '"0"'):
+            os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = token
+            self.assertFalse(admin_backend.auto_publish_verified_enabled(), token)
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "0"
+        before = self._version()
+        created = self.store.ingest_news([
+            news_payload(verified=True, source_url="https://example.com/switch-off"),
+            news_payload(verified=False, source_url="https://example.com/switch-off-plain"),
+        ])
+        pending_id = created["inserted"][0]
+        self.assertEqual(created["published"], [])
+        self.assertEqual(self._statuses()[pending_id], "pending")
+        self.assertEqual(self._version(), before)
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "1"
+        repeated = self.store.ingest_news([news_payload(verified=True, title="改写标题", source_url="https://example.com/switch-off")])
+        self.assertEqual(repeated["inserted"], [])
+        self.assertEqual(repeated["ignored"], [pending_id])
+        self.assertEqual(repeated["published"], [])
+        self.assertEqual(self._statuses()[pending_id], "pending")
+        self.assertEqual(self._version(), before)
+        with self.store._db() as db:
+            stored = json.loads(db.execute("SELECT data FROM news WHERE id=?", (pending_id,)).fetchone()[0])
+        self.assertEqual(stored["title"], "教会周报")
+        opened = self.store.ingest_news([news_payload(verified=True, source_url="https://example.com/switch-on")])
+        self.assertEqual(opened["published"], opened["inserted"])
+        self.assertEqual(self._statuses()[pending_id], "pending")
+        self.assertEqual(self._version(), before + 1)
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "maybe"
+        self.assertTrue(admin_backend.auto_publish_verified_enabled())
+
+    def test_switch_file_overrides_environment_without_restart(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "1"
+        os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = "1"
+        self.switch_file.write_text(
+            "# live override\nexport NEWS_AUTO_PUBLISH_VERIFIED=0\nNEWS_SHOW_PUBLISH_VERIFIED_BUTTON=off\n",
+            encoding="utf-8",
+        )
+        self.assertFalse(admin_backend.auto_publish_verified_enabled())
+        created = self.store.ingest_news([news_payload(verified=True, source_url="https://example.com/file-off")])
+        self.assertEqual(created["published"], [])
+        self.assertEqual(self._statuses()[created["inserted"][0]], "pending")
+        self.assertIs(self.store.news_listing()["showPublishVerified"], False)
+        self.switch_file.write_text(
+            "NEWS_AUTO_PUBLISH_VERIFIED='on'\nNEWS_SHOW_PUBLISH_VERIFIED_BUTTON=\"true\"\n",
+            encoding="utf-8",
+        )
+        self.assertTrue(admin_backend.auto_publish_verified_enabled())
+        self.assertIs(self.store.news_listing()["showPublishVerified"], True)
+        self.switch_file.unlink()
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "off"
+        os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = "0"
+        self.assertFalse(admin_backend.auto_publish_verified_enabled())
+        self.assertIs(self.store.news_listing()["showPublishVerified"], False)
+
+    def test_publish_button_flag_defaults_off_until_explicitly_enabled(self):
+        self.assertIs(admin_backend.show_publish_verified_button(), False)
+        self.assertIs(self.store.news_listing()["showPublishVerified"], False)
+        for token in ("1", "true", "on", " ON ", '"true"'):
+            os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = token
+            self.assertIs(self.store.news_listing()["showPublishVerified"], True, token)
+        for token in ("", "0", "false", "off", "yes", "maybe"):
+            os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = token
+            self.assertIs(self.store.news_listing()["showPublishVerified"], False, token)
+
+    def test_duplicate_and_rejected_rows_are_not_published_again(self):
+        created = self.store.ingest_news([
+            news_payload(verified=True, title="将要撤下", source_url="https://example.com/take-down"),
+            news_payload(verified=True, title="信徒遭监禁", summary="代祷", source_url="https://example.com/take-down-prayer"),
+        ])
+        home_id, prayer_id = created["inserted"]
+        version = self._version()
+        _token, session = self._actor()
+        actor = session["user"]["id"]
+        removed = self.store.review_news(actor, home_id, "reject")
+        self.assertEqual(removed["status"], "rejected")
+        self.assertEqual(self._version(), version + 1)
+        self.assertNotIn(home_id, {item["id"] for item in self.store.content(public=True)["items"]})
+        self.store.review_news(actor, prayer_id, "reject")
+        self.assertEqual(self._version(), version + 2)
+        self.assertEqual(self.store.prayer_requests()["items"], [])
+        self.assertNotIn(prayer_id, {item["id"] for item in self.store.content(public=True)["items"]})
+        again = self.store.ingest_news([
+            news_payload(verified=True, title="标题被换成别的", source_url="https://example.com/take-down"),
+            news_payload(verified=True, title="信徒遭监禁", summary="代祷", source_url="https://example.com/take-down-prayer"),
+        ])
+        self.assertEqual(again["inserted"], [])
+        self.assertCountEqual(again["ignored"], [home_id, prayer_id])
+        self.assertEqual(again["published"], [])
+        self.assertEqual(self._statuses()[home_id], "rejected")
+        self.assertEqual(self._statuses()[prayer_id], "rejected")
+        self.assertEqual(self._version(), version + 2)
+        with self.store._db() as db:
+            stored = json.loads(db.execute("SELECT data FROM news WHERE id=?", (home_id,)).fetchone()[0])
+            note = db.execute(
+                "SELECT detail FROM audit WHERE action='ingest_news' ORDER BY id DESC LIMIT 1"
+            ).fetchone()[0]
+        self.assertEqual(stored["title"], "将要撤下")
+        self.assertNotIn("auto-publish by ingest", note)
+
+    def test_auto_publish_batch_rolls_back_when_the_version_bump_fails(self):
+        before = self._version()
+        with patch.object(AdminStore, "_bump_if_news_public_changed", side_effect=sqlite3.OperationalError("simulated")):
+            with self.assertRaises(sqlite3.OperationalError):
+                self.store.ingest_news([
+                    news_payload(verified=True, source_url="https://example.com/rollback-1"),
+                    news_payload(verified=False, source_url="https://example.com/rollback-2"),
+                ])
+        self.assertEqual(self.store.list_news(), [])
+        self.assertEqual(self._version(), before)
+        with self.store._db() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM audit WHERE action='ingest_news'").fetchone())
+
+    def test_hidden_publish_button_does_not_remove_the_authenticated_route(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "0"
+        os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = "0"
+        created = self.store.ingest_news([
+            news_payload(verified=True, source_url="https://example.com/manual-batch"),
+            news_payload(verified=False, source_url="https://example.com/manual-batch-no"),
+        ])
+        verified_id, unverified_id = created["inserted"]
+        httpd = start_server(self.store)
+        port = httpd.server_address[1]
+        origin = f"http://127.0.0.1:{port}"
+        try:
+            status, denied = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 1})
+            self.assertEqual(status, 401)
+            self.assertEqual(json.loads(denied)["error"], "authentication_required")
+            token, session = self._actor()
+            headers = {
+                "Origin": origin,
+                "Cookie": "prayer_admin_session=" + token,
+                "X-CSRF-Token": session["csrfToken"],
+            }
+            status, listed = request(port, "GET", "/api/admin/news", None, headers)
+            self.assertEqual(status, 200)
+            listing = json.loads(listed)
+            self.assertIs(listing["showPublishVerified"], False)
+            self.assertEqual(listing["publishable"], 1)
+            version = self._version()
+            status, published = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 1}, headers)
+            self.assertEqual(status, 200)
+            body = json.loads(published)
+            self.assertEqual(body["published"], 1)
+            self.assertEqual(body["version"], version + 1)
+            self.assertEqual(self._statuses()[verified_id], "published")
+            self.assertEqual(self._statuses()[unverified_id], "pending")
+            os.environ[admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV] = "on"
+            status, shown = request(port, "GET", "/api/admin/news", None, headers)
+            self.assertIs(json.loads(shown)["showPublishVerified"], True)
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
+    def test_deploy_script_does_not_write_news_switch_settings(self):
+        source = Path(__file__).with_name("deploy-trial.py").read_text(encoding="utf-8")
+        self.assertIn("EnvironmentFile=-/etc/prayer-earth-news/ingest.env", source)
+        self.assertNotIn("NEWS_AUTO_PUBLISH_VERIFIED=", source)
+        self.assertNotIn("NEWS_SHOW_PUBLISH_VERIFIED_BUTTON=", source)
+        for line in source.splitlines():
+            if "ingest.env" in line or "switches.env" in line:
+                self.assertNotIn("tee ", line)
+                self.assertNotIn("cat >", line)
+                self.assertNotRegex(line, r">>")
+
     def _actor(self):
         self.store.bootstrap("admin", "temporary-pass-1")
         token, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
@@ -357,6 +598,7 @@ class NewsIngestTests(unittest.TestCase):
             )
 
     def test_publish_verified_publishes_only_pending_json_true_and_bumps_once(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "0"
         _token, session = self._actor()
         actor = session["user"]["id"]
         created = self.store.ingest_news([
@@ -447,6 +689,7 @@ class NewsIngestTests(unittest.TestCase):
         self.assertTrue(all(status != "published" for status in self._statuses().values()))
 
     def test_publish_verified_rolls_back_when_a_later_row_fails(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "0"
         _token, session = self._actor()
         created = self.store.ingest_news([
             news_payload(verified=True, source_url="https://example.com/atomic-1"),
@@ -474,6 +717,7 @@ class NewsIngestTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0], before)
 
     def test_http_publish_verified_requires_session_csrf_and_uses_expected_count(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "0"
         created = self.store.ingest_news([
             news_payload(verified=True, source_url="https://example.com/http-1"),
             news_payload(verified=True, source_url="https://example.com/http-2"),
@@ -525,6 +769,7 @@ class NewsIngestTests(unittest.TestCase):
             self.assertEqual(status, 200)
             listing = json.loads(listed)
             self.assertEqual(listing["publishable"], 2)
+            self.assertIs(listing["showPublishVerified"], False)
             self.assertEqual(sum(1 for item in listing["items"] if item["verified"] is True), 2)
             version_before = self._version()
             status, mismatched = request(port, "POST", "/api/admin/news/publish-verified", {"expected_count": 1}, headers)
@@ -578,8 +823,18 @@ class PrayerRoutingTests(unittest.TestCase):
         self.store.bootstrap("admin", "temporary-pass-1")
         _, login = self.store.login("admin", "temporary-pass-1", "127.0.0.1")
         self.actor = login["user"]["id"]
+        self.switch_file = Path(self.tmp.name) / "switches.env"
+        self.switch_patch = patch.object(admin_backend, "NEWS_SWITCH_FILE", self.switch_file)
+        self.switch_patch.start()
+        self.flag_patch = patch.dict(os.environ, {
+            admin_backend.AUTO_PUBLISH_VERIFIED_ENV: "",
+            admin_backend.SHOW_PUBLISH_VERIFIED_BUTTON_ENV: "",
+        }, clear=False)
+        self.flag_patch.start()
 
     def tearDown(self):
+        self.flag_patch.stop()
+        self.switch_patch.stop()
         self.tmp.cleanup()
 
     def _version(self):
@@ -594,6 +849,7 @@ class PrayerRoutingTests(unittest.TestCase):
         return {item["id"] for item in self.store.content(public=public)["items"] if item.get("kind") == "news" or item.get("channel") == "宗教动态"}
 
     def test_verified_keyword_is_auto_routed_by_date_and_not_duplicated(self):
+        before = self._version()
         created = self.store.ingest_news([
             news_payload(verified=True, title="教会周报", summary="本周聚会安排", source_url="https://example.com/plain", published_at="2026-10-28T08:00:00Z"),
             news_payload(verified=True, title="信徒遭监禁", summary="短摘要", source_url="https://example.com/old", published_at="2026-10-01T08:00:00Z"),
@@ -602,7 +858,6 @@ class PrayerRoutingTests(unittest.TestCase):
             news_payload(verified=True, title="地区新闻", summary="没有关键词", region="迫害", source_url="https://example.com/region", published_at="2026-10-22T08:00:00Z"),
         ])
         ids = created["inserted"]
-        version = self._version()
         for news_id in ids:
             self.store.review_news(self.actor, news_id, "publish")
         plain, old, new, english, region_only = ids
@@ -618,7 +873,7 @@ class PrayerRoutingTests(unittest.TestCase):
         self.assertIn(region_only, content_ids)
         self.assertTrue(set(prayer_ids).isdisjoint(content_ids))
         self.assertEqual(self._row_count(), 5)
-        self.assertGreater(self._version(), version)
+        self.assertGreater(self._version(), before)
         again = self.store.review_news(self.actor, english, "publish")
         self.assertEqual(again["status"], "published")
         self.assertEqual(self._version(), prayers["version"])
@@ -697,6 +952,7 @@ class PrayerRoutingTests(unittest.TestCase):
         self.assertIn(news_id, self._ids())
 
     def test_pending_keyword_is_not_public_until_publish(self):
+        os.environ[admin_backend.AUTO_PUBLISH_VERIFIED_ENV] = "off"
         created = self.store.ingest_news([
             news_payload(verified=True, title="禁教之后", summary="短摘要", source_url="https://example.com/pending-prayer"),
         ])

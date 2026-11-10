@@ -17,6 +17,11 @@ Their ETag is the shared content version plus a short hash of the returned
 item ids. Authenticated responses are not cached. The failover signature
 does not read that ETag; it still uses snapshot file hashes and
 ``contentVersion``.
+
+A new ingest row with JSON boolean ``verified: true`` is published immediately
+unless ``NEWS_AUTO_PUBLISH_VERIFIED`` is ``0``, ``false``, or ``off``. The
+one-click button stays hidden unless ``NEWS_SHOW_PUBLISH_VERIFIED_BUTTON``
+is ``1``, ``true``, or ``on``. Both are read on every request.
 """
 from __future__ import annotations
 
@@ -69,6 +74,14 @@ INGEST_WINDOW_SECONDS = 600
 INGEST_KEY_ENV = "PRAYER_NEWS_INGEST_KEY"
 INGEST_KEY_FILE_ENV = "PRAYER_NEWS_INGEST_KEY_FILE"
 DEFAULT_INGEST_KEY_FILE = Path("/etc/prayer-earth-news/ingest.key")
+# Read on every ingest and admin listing. Do not cache: tests and a readable
+# switches file can change the value without restarting the process.
+AUTO_PUBLISH_VERIFIED_ENV = "NEWS_AUTO_PUBLISH_VERIFIED"
+SHOW_PUBLISH_VERIFIED_BUTTON_ENV = "NEWS_SHOW_PUBLISH_VERIFIED_BUTTON"
+NEWS_SWITCH_FILE = Path("/etc/prayer-earth-news/switches.env")
+_NEWS_SWITCH_NAMES = frozenset({AUTO_PUBLISH_VERIFIED_ENV, SHOW_PUBLISH_VERIFIED_BUTTON_ENV})
+_SWITCH_OFF = frozenset({"0", "false", "off"})
+_SWITCH_ON = frozenset({"1", "true", "on"})
 NEWS_CHANNEL = "宗教动态"
 NEWS_CATEGORIES = {"基督教", "宗教宣教", "教会", "教会相关"}
 NEWS_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", "region", "verified", "category"}
@@ -201,6 +214,71 @@ def resolve_ingest_key() -> str | None:
     if DEFAULT_INGEST_KEY_FILE.is_file():
         return _read_secret_file(DEFAULT_INGEST_KEY_FILE)
     return None
+
+
+def _switch_token(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    text = raw.strip().casefold()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in {'"', "'"}:
+        text = text[1:-1].strip()
+    return text
+
+
+def _read_switch_file() -> dict[str, str]:
+    """Return switch overrides from ``switches.env``, or {} when it is absent.
+
+    Only the two news switches are kept. A missing file is normal. An
+    unreadable or malformed file is ignored so a permission mistake does not
+    take the ingest endpoint down; the process environment is used instead.
+    """
+    try:
+        data = NEWS_SWITCH_FILE.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return {}
+    found: dict[str, str] = {}
+    for line in data.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith("export "):
+            stripped = stripped[7:].strip()
+        if "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        if key in _NEWS_SWITCH_NAMES:
+            found[key] = value.strip()
+    return found
+
+
+def news_switch(name: str, *, default: bool, explicit_on: bool) -> bool:
+    """Resolve one news switch for this call.
+
+    ``switches.env`` is parsed on every call and overrides the process
+    environment when it contains the key. Otherwise the environment variable
+    is read now, not a value cached at import. Auto-publish is on unless the
+    token is ``0``, ``false``, or ``off``. The publish button is off unless
+    the token is ``1``, ``true``, or ``on``.
+    """
+    overrides = _read_switch_file()
+    raw = overrides[name] if name in overrides else os.environ.get(name)
+    text = _switch_token(raw)
+    if not text:
+        return default
+    if explicit_on:
+        return text in _SWITCH_ON
+    if text in _SWITCH_OFF:
+        return False
+    return True
+
+
+def auto_publish_verified_enabled() -> bool:
+    return news_switch(AUTO_PUBLISH_VERIFIED_ENV, default=True, explicit_on=False)
+
+
+def show_publish_verified_button() -> bool:
+    return news_switch(SHOW_PUBLISH_VERIFIED_BUTTON_ENV, default=False, explicit_on=True)
 
 
 def _plain(value: object, *, minimum: int, maximum: int, code: str, message: str) -> str:
@@ -810,31 +888,48 @@ class AdminStore:
         }
 
     def ingest_news(self, items: object) -> dict:
-        """Insert a religious news batch as pending. Duplicates are ignored.
+        """Insert a religious news batch. Duplicates are ignored.
 
-        Pending rows are not public and do not change the content version.
+        When auto-publish is on, a new row whose ``verified`` value is the
+        JSON boolean true is stored as ``published``. ``verified: false`` stays
+        ``pending``. The switch is read once per call. Inserts, the single
+        version bump, and the audit row share one transaction. ``INSERT OR
+        IGNORE`` does not rewrite an existing pending, published, or rejected
+        row, so a rejected id is not published again. Pending-only and
+        duplicate-only batches do not change the content version.
         """
         if not isinstance(items, list) or not items:
             raise ApiError(400, "invalid_batch", f"请一次提交 1–{MAX_NEWS_BATCH} 条宗教动态。")
         if len(items) > MAX_NEWS_BATCH:
             raise ApiError(400, "batch_too_large", f"单次最多提交 {MAX_NEWS_BATCH} 条宗教动态。")
         records = [self._normalize_news_item(item, index) for index, item in enumerate(items)]
+        auto = auto_publish_verified_enabled()
         inserted: list[str] = []
         ignored: list[str] = []
+        published: list[str] = []
         with self._db() as db:
+            before = self._news_public_sets(db)
             for record in records:
+                status = "published" if auto and record["verified"] is True else "pending"
                 db.execute(
                     "INSERT OR IGNORE INTO news(id,data,status,created_at,updated_at,needs_prayer,prayer_excluded) "
-                    "VALUES (?,?,'pending',?,?,0,0)",
-                    (record["id"], json.dumps(record, ensure_ascii=False), _now(), _now()),
+                    "VALUES (?,?,?,?,?,0,0)",
+                    (record["id"], json.dumps(record, ensure_ascii=False), status, _now(), _now()),
                 )
                 if db.execute("SELECT changes()").fetchone()[0]:
                     inserted.append(record["id"])
+                    if status == "published":
+                        published.append(record["id"])
                 else:
                     ignored.append(record["id"])
+            # One bump for the whole batch, including rows routed to the prayer page.
+            self._bump_if_news_public_changed(db, before)
             # Ids only: titles and URLs can carry untrusted text or query tokens.
-            self._audit(db, "news-ingest", "ingest_news", None, {"inserted": inserted, "ignored": ignored})
-        return {"inserted": inserted, "ignored": ignored}
+            detail: dict = {"inserted": inserted, "ignored": ignored, "published": published}
+            if published:
+                detail["note"] = "auto-publish by ingest"
+            self._audit(db, "news-ingest", "ingest_news", None, detail)
+        return {"inserted": inserted, "ignored": ignored, "published": published}
 
     def review_news(self, actor: str, news_id: str, action: str) -> dict:
         if action not in ("publish", "reject"):
@@ -879,6 +974,8 @@ class AdminStore:
     def news_listing(self, status: str | None = None) -> dict:
         if status is not None and status not in ("pending", "published", "rejected"):
             raise ApiError(400, "invalid_status", "状态须为 pending、published 或 rejected。")
+        # Parsed per request so the button can appear without a new deploy.
+        show_button = show_publish_verified_button()
         with self._db() as db:
             if status:
                 rows = db.execute("SELECT * FROM news WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
@@ -894,7 +991,7 @@ class AdminStore:
                 )
                 for row in rows
             ]
-            return {"items": items, "publishable": len(self._publishable_ids(db))}
+            return {"items": items, "publishable": len(self._publishable_ids(db)), "showPublishVerified": show_button}
 
     def list_news(self, status: str | None = None) -> list[dict]:
         return self.news_listing(status)["items"]

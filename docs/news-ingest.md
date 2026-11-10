@@ -1,6 +1,8 @@
 # 宗教动态接入
 
-外部汇总 bot 每个整点把基督教、宗教宣教、教会相关的短讯一次性提交到主站。条目先进入待审，同工在后台公开或驳回。只有公开的短讯进入主应用、轻量阅读页和备用站快照。页面只显示标题、短摘要、来源和日期，不转载全文。
+外部汇总 bot 每个整点把基督教、宗教宣教、教会相关的短讯一次性提交到主站。`verified` 为 JSON 布尔值 `true` 的新条目默认直接公开；`verified` 为 `false` 的仍进入待审，由同工在后台逐条公开或驳回。只有公开的短讯进入主应用、轻量阅读页和备用站快照。页面只显示标题、短摘要、来源和日期，不转载全文。
+
+**信任边界：** 主站不复核 bot 的核实结论。外部 bot 只要拿着提交密钥、并把 `verified` 写成 JSON 布尔值 `true`，这条新动态就会上线，出现在主应用、阅读页和备用站。密钥泄露、bot 误标或不实内容会直接公开。发现不实时，在后台对那一条点「撤下」；同一编号再次提交不会把已驳回的记录重新公开。若要整批回到人工审核，按下面的开关关掉自动公开。关掉开关不会撤下已经公开的条目。
 
 ## 接口
 
@@ -49,16 +51,21 @@ Content-Type: application/json
 
 多出来的字段（包括全文 `body`）会使整批失败，本批一条都不会写入。`财经`、`AI`、`安全` 以及其他非白名单分类同样整批拒绝。
 
-编号是 `news-<YYYYMMDD>-<来源链接 SHA-256 的前 12 位十六进制>`。链接会先规范成小写协议和主机、去掉片段和默认端口。相同编号使用 `INSERT OR IGNORE`：已存在则忽略，不覆盖待审、已公开或已驳回的记录。
+编号是 `news-<YYYYMMDD>-<来源链接 SHA-256 的前 12 位十六进制>`。链接会先规范成小写协议和主机、去掉片段和默认端口。相同编号使用 `INSERT OR IGNORE`：已存在则忽略，不覆盖待审、已公开或已驳回的记录。已驳回的编号再次以 `verified: true` 提交，仍留在 `ignored`，状态保持已驳回，不会重新公开，也不会改内容版本。已存在的待审记录同样不会因为后来打开了自动公开而被改成已公开。
 
 成功时 HTTP 200：
 
 ```json
 {
   "inserted": ["news-20261027-0123456789ab"],
-  "ignored": []
+  "ignored": [],
+  "published": []
 }
 ```
+
+上面这条示例的 `verified` 是 `false`，所以 `published` 为空。若它是 JSON 布尔值 `true` 且自动公开开着，同一个编号会出现在 `published` 里。
+
+`inserted` 仍是本次新写入的编号，`ignored` 仍是已存在所以被忽略的编号。两者的含义不变。`published` 是本次新公开的编号，是 `inserted` 的子集，顺序与提交顺序一致。旧客户端可以不读这个字段。自动公开关闭，或该条 `verified` 为 `false` 时，`published` 是空数组。`published` 在这里是编号列表；管理接口 `POST /api/admin/news/publish-verified` 的 `published` 仍是条数，两处不要混用。
 
 失败时正文是 `{ "error": "<code>", "message": "<说明>" }`，不会回显密钥。
 
@@ -101,9 +108,65 @@ openssl rand -hex 32
 
 轮换：生成新密钥，先把它交给提交方 bot，再替换环境文件或密钥文件。环境变量方式随后执行 `sudo systemctl restart prayer-earth-trial.service`。确认新密钥可以提交后，删除旧文件内容。旧密钥立即失效，已入库的动态不受影响。
 
+## 自动公开已核实的新动态
+
+同一批在一个数据库事务里写入。开关在这一次请求开始时解析一次，不在进程启动时缓存。
+
+- `NEWS_AUTO_PUBLISH_VERIFIED` 未设置、为空，或不是下面的关闭值：`verified` 为 JSON 布尔值 `true` 的新行，`status` 直接写成 `published`。
+- 关闭值只认 `0`、`false`、`off`。比较前去掉首尾空白和大小写，并去掉一层成对的单引号或双引号。`false` 写成 `"false"` 也算关闭。其他取值（包括 `1`、`true`、`on`、拼写错误）保持开启。
+- `verified` 为 JSON 布尔值 `false` 的新行始终是 `pending`，与开关无关。字符串 `"true"` 仍然整批拒绝，不会入库。
+- 本批只要有新的公开行（包括随后被分流到祷告页的行），内容 `version` 只加 1，不论公开了几条。整批都是待审，或全是已存在编号，则不加版本。
+- 审计仍是一条 `action` 为 `ingest_news`、`actor` 为 `news-ingest` 的记录。有新公开行时，`detail` 里带 `"note": "auto-publish by ingest"`，以及 `published` 编号列表。没有新公开行时不加这句。`detail` 只含编号，不含标题和链接。事务失败会整批回滚，不留半批、不加版本、不写这条审计。
+
+祷告页分流规则不变：已公开、未排除，并且（已核实且标题或摘要命中迫害类关键词，或同工手动标记）才进入祷告页，同时从宗教动态列表移出。因此已核实且命中关键词的新动态会直接出现在祷告页，而不是首页的宗教动态列表。已核实但没有命中关键词的，进入首页能读到的 `/api/content` 和「宗教动态」。未核实的即使命中关键词也不自动出现。`/api/content` 与 `/api/prayer-requests` 的 ETag 仍是内容版本加本次返回条目 id 的短哈希；自动公开改变了公开集合时，对应 ETag 会变，旧的 `"content-<version>"` 和 `"prayer-requests-<version>"` 不会 304。计算 ETag 不加版本。
+
+### 在服务器上关闭
+
+两个开关都放在服务器上，不要写进仓库或 `deploy-trial.py`。`scripts/deploy-trial.py` 生成的 `prayer-earth-trial.service` 只有这一行可选引用：
+
+```
+EnvironmentFile=-/etc/prayer-earth-news/ingest.env
+```
+
+部署会重写单元文件，但不会给这两个变量写 `Environment=`，也不会创建或覆盖 `ingest.env` 和 `switches.env`。管理员写在这两个文件里的值，部署之后还在。
+
+1. 写在现有的 EnvironmentFile 里，然后重启。适合和提交密钥放在一起。systemd 只在服务启动时读取 `ingest.env`，改文件后必须重启，不需要重新部署：
+
+   ```sh
+   sudo install -d -o root -g prayer-web -m 750 /etc/prayer-earth-news
+   sudo touch /etc/prayer-earth-news/ingest.env
+   sudo chown root:root /etc/prayer-earth-news/ingest.env
+   sudo chmod 600 /etc/prayer-earth-news/ingest.env
+   printf '\nNEWS_AUTO_PUBLISH_VERIFIED=0\n' | sudo tee -a /etc/prayer-earth-news/ingest.env >/dev/null
+   sudo systemctl restart prayer-earth-trial.service
+   ```
+
+   文件里已经有 `PRAYER_NEWS_INGEST_KEY` 时，只追加开关那一行，不要整文件覆盖把密钥抹掉。恢复自动公开时删掉这一行，或改成 `1`，然后再重启。
+
+2. 不想重启时，写 `switches.env`。进程每次处理 `POST /api/ingest/news`，以及每次 `GET /api/admin/news`，都会重新读这个文件。文件里出现的开关盖过进程环境变量，所以能盖过启动时从 `ingest.env` 注入的旧值。文件不存在就跳过，改回只看环境变量。部署脚本不创建、不覆盖它。不要把提交密钥写进来。
+
+   ```sh
+   sudo install -o root -g prayer-web -m 640 /dev/null /etc/prayer-earth-news/switches.env
+   printf 'NEWS_AUTO_PUBLISH_VERIFIED=0\n' | sudo tee /etc/prayer-earth-news/switches.env >/dev/null
+   ```
+
+   下一次提交就全部回到待审。确认生效后，若 `ingest.env` 里也写过相反的值，以 `switches.env` 为准，直到删掉文件里的这一行或删掉整个文件。
+
+`ProtectSystem=strict` 下 `/etc` 仍可读。`switches.env` 要让 `prayer-web` 读到，所以是 `root:prayer-web` `640`。`ingest.env` 继续保持 `root:root` `600`，由 systemd 在降权前读取。
+
+### 一键按钮
+
+`NEWS_SHOW_PUBLISH_VERIFIED_BUTTON` 用同一套解析：先 `switches.env`，再环境变量，每次打开后台列表时读。默认隐藏。只有 `1`、`true`、`on`（同样忽略大小写、空白和一层引号）才显示。`0`、`false`、`off`、未设置和其他取值都隐藏。
+
+```sh
+printf 'NEWS_SHOW_PUBLISH_VERIFIED_BUTTON=1\n' | sudo tee -a /etc/prayer-earth-news/switches.env >/dev/null
+```
+
+按钮隐藏时，`POST /api/admin/news/publish-verified` 仍接受已登录会话、`X-CSRF-Token` 和同源检查。临时密码、编辑同工权限和写限流都不变。这个接口仍只处理当时仍是 `pending` 且 `verified` 为 JSON 布尔值 `true` 的行，用来补公开开关关闭期间积下的已核实待审，或开关文件生效前已经入库的旧待审。
+
 ## 审核、版本和备用站
 
-新行的 `status` 是 `pending`。待审和驳回不会出现在：
+自动公开开启时，已核实的新行是 `published`，未核实的新行是 `pending`。自动公开关闭时，新行都是 `pending`。待审和驳回不会出现在：
 
 - `GET /api/content`
 - 主站 `/reader/` 页面
@@ -111,18 +174,20 @@ openssl rand -hex 32
 
 因此待审提交不会增加内容 `version`，也不会改变快照文件哈希。备用站签名覆盖内容文件哈希和内容版本，不覆盖 `health.json` 的 `generatedAt`。待审阶段签名不变，发布任务会核对后跳过部署。
 
-同工登录后，在「宗教动态」里公开或驳回。这两个动作沿用管理接口的会话 cookie、`X-CSRF-Token` 和同源检查；编辑同工和管理员都可以审核，但必须先改掉临时密码。写请求仍走原来的管理员写限流。
+同工登录后，在「宗教动态」里处理未核实条目，也可以撤下已经公开的条目。这些动作沿用管理接口的会话 cookie、`X-CSRF-Token` 和同源检查；编辑同工和管理员都可以审核，但必须先改掉临时密码。写请求仍走原来的管理员写限流。
 
 - 待审 → 公开：写入公开列表，`version` 加 1
 - 待审 → 驳回：仍不公开，`version` 不变
-- 已公开 → 驳回：从公开列表移除，`version` 加 1
+- 已公开 → 撤下：接口仍是单条 `reject`，状态变为 `rejected`，从公开列表和祷告页移除，`version` 加 1
 - 重复执行同一动作：不重复加版本
+
+后台对已公开条目显示「撤下」，对待审且尚未驳回的条目显示「驳回」。已驳回的条目可以再点「公开」。撤下后的编号再被 bot 提交，仍然被忽略。
 
 `GET /api/admin/news` 在 `items` 之外多一个 `publishable`：当前 `status=pending` 且 `verified` 为 JSON 布尔值 `true` 的条数。字符串 `"false"` / `"true"`、数字、缺失字段都不算。列表筛选不会改变这个数字。
 
 ### 一键公开已核实
 
-页面按钮是「一键公开已核实」。`publishable` 为 0 时按钮禁用，并提示没有已核实的待审动态。大于 0 时按钮写上条数。点击后先向服务端再取一次条数，确认框里显示将要公开的条数；取消则不提交。确认后才调用下面的接口，并把该条数作为 `expected_count`。
+页面按钮是「一键公开已核实」。默认不渲染出来：`GET /api/admin/news` 在 `items` 和 `publishable` 之外还有 `showPublishVerified`，只有它为 JSON 布尔值 `true` 时按钮才显示。筛选条件不改变这个布尔值。按钮显示出来之后，行为与以前相同：`publishable` 为 0 时按钮禁用，并提示没有已核实的待审动态。大于 0 时按钮写上条数。点击后先向服务端再取一次条数，确认框里显示将要公开的条数；取消则不提交。确认后才调用下面的接口，并把该条数作为 `expected_count`。
 
 `POST /api/admin/news/publish-verified`
 
@@ -165,7 +230,7 @@ openssl rand -hex 32
 
 公开后的下一次快照会多出文字页和来源链接，文件哈希与 `version` 一起变化，签名变化，备用站发布任务会部署新快照。一键公开 N 条（N > 0）也只加 1 次版本、产生一次新签名，不会按条数连加。N 为 0 时快照签名不变，备用站不会因此发布。来源链接只允许 `http`/`https`。阅读页把文本做 HTML 转义，链接使用 `target="_blank"` 和 `rel="noopener noreferrer"`。
 
-公开错了没有批量撤回。在「宗教动态」里对已公开条目逐条点「驳回」。每一条从已公开变为驳回都会再把 `version` 加 1，备用站会再发一版，该条从主应用和备用阅读站消失。其余已公开条目不受影响。
+公开错了没有批量撤回。在「宗教动态」里对已公开条目逐条点「撤下」。每一条从已公开变为驳回都会再把 `version` 加 1，备用站会再发一版，该条从主应用和备用阅读站消失。其余已公开条目不受影响。自动公开的一批如果后来发现不实，也是逐条撤下，不能靠再次提交同一编号来改正正文。
 
 ## 需要祷告
 
@@ -215,7 +280,9 @@ ETag 是带引号的强校验值。`/api/content` 为 `"content-<version>-<哈�
 
 这些条目不会出现在 `GET /api/content`、主应用「动态」、`/reader/news.html`、`/reader/index.html` 的全部列表，以及备用站快照的对应页面。它们出现在主应用祷告页、`/reader/prayers.html` 和备用站的「需要祷告」。来源仍是 `http`/`https`，`target="_blank"` 与 `rel="noopener noreferrer"`。
 
-宗教动态列表或祷告页的成员变化（公开、驳回、标记、排除，且公开集合真的有增减）时，内容 `version` 加 1，并且只加 1。成员没变（重复标记、重复排除、待审入库）不加版本。只驳回一条原本不在任一公开列表的待审，版本也不加。这次没有改这些计数规则。
+宗教动态列表或祷告页的成员变化（自动公开、人工公开、撤下、标记、排除，且公开集合真的有增减）时，内容 `version` 加 1，并且只加 1。成员没变（重复标记、重复排除、待审入库、重复编号、已驳回再次提交）不加版本。只驳回一条原本不在任一公开列表的待审，版本也不加。
+
+对备用站签名的影响：`scripts/deploy-reader-failover.py` 的 `signature()` 仍只覆盖快照文件哈希、`contentVersion`、Worker 脚本哈希、静态资源配置，以及账户、Worker 名和主机名。它不读 API 的 ETag。`contentVersion` 就是上面的 `version`。因此每一批里只要自动公开了至少一条新动态，下一次快照的页面会多出这条（在宗教动态或「需要祷告」），文件哈希和 `contentVersion` 一起变，签名变，发布任务会部署新快照。同一批多条也只加 1 次版本、产生一次新签名。整批没有新的公开行时，签名不变，备用站不会因此重发。之后每撤下一条已公开动态，签名再变一次，备用站再发一版。
 
 备用站签名不读 API 的 ETag。`scripts/deploy-reader-failover.py` 的 `signature()` 仍只覆盖快照文件哈希、`contentVersion`、Worker 脚本哈希、静态资源配置，以及账户、Worker 名和主机名。`contentVersion` 就是上面的 `version`。因此：
 
@@ -268,7 +335,9 @@ curl -s -H "Authorization: Bearer local-ingest-key-01" -H 'Content-Type: applica
 curl -s http://127.0.0.1:18080/api/content
 ```
 
-然后用同工账号打开 `/admin`，在「宗教动态」里公开。再次请求 `/api/content` 应能看到该条，`/reader/news.html` 应有摘要、来源链接和「待核实」，晨修列表不应出现它。错误密钥应得到 401，不配置密钥时应得到 404。
+上面这条 `verified` 为 `false`，公开前 `/api/content` 读不到正文。把同一条改成 `"verified": true` 再提交一条新的来源链接，不打开后台也应能在 `/api/content` 看到它；标题含「监禁」一类词的则出现在 `/api/prayer-requests`，不出现在 `/api/content`。错误密钥应得到 401，不配置密钥时应得到 404。
+
+若本机要看关闭自动公开后的待审，启动前加上 `NEWS_AUTO_PUBLISH_VERIFIED=0`。改这个环境变量后，下一个请求就按新值处理，不必另起解释器缓存。
 
 `.local-data/` 只留在本机，不要提交。
 
@@ -277,10 +346,14 @@ curl -s http://127.0.0.1:18080/api/content
 - 仓库、脚本、镜像和日志里没有真实密钥。`deploy-trial.py` 只声明可选的 `EnvironmentFile`，不写密钥。
 - 服务器上的密钥文件权限是 `600`（环境文件）或 `640` 且属组为 `prayer-web`（密钥文件）。提交方 bot 已换成同一把密钥。
 - 用错误密钥、非宗教分类、超长摘要和 `javascript:` 链接各试一次，确认被拒绝且没有入库。
-- 待审时记下 `/api/content` 的 `version` 和备用站 `health.json` 的 `contentVersion`。两者都不应因为这次提交而增加。
-- 公开一条之后，`version` 增加，主站阅读页和稍后的备用站都能看到摘要与来源，待审和驳回的仍不可见。
-- 一键公开前记下 `GET /api/admin/news` 的 `publishable`，以及 `/api/content` 的 `version`。确认框里的条数应与 `publishable` 一致。只点一次并确认后，`version` 只加 1；`verified` 不是布尔值 `true` 的待审、已驳回和原先已公开的条目状态不变。条数为 0 时按钮不可用，直接调用接口也不会增加 `version`。
-- 若要撤回，在后台对不该公开的条目逐条驳回，并确认每驳回一条 `version` 再加 1、该条从公开列表消失。
+- 自动公开开启时，提交一条 `verified: true` 且不含迫害关键词的新动态，`/api/content` 的 `version` 和随后备用站 `health.json` 的 `contentVersion` 都加 1，主站阅读页和备用站能看到摘要与来源。同一批再混一条 `verified: false`，版本仍然只加 1，未核实的那条不可见。
+- 同一批里已核实且标题含「监禁」「迫害」一类词的，出现在 `/api/prayer-requests` 和 `/reader/prayers.html`，不出现在 `/api/content` 和 `/reader/news.html`。这批的 `version` 仍只加 1。
+- 把同一编号再提交一次，响应在 `ignored` 里，`published` 为空，`version` 不变。先撤下再提交，状态仍是已驳回，不会重新公开。
+- 在 `ingest.env` 写入 `NEWS_AUTO_PUBLISH_VERIFIED=0` 并重启，或把同一行写入 `switches.env` 且不重启，下一条已核实动态应回到待审，`version` 不增加。确认 `deploy-trial.py` 没有覆盖这两个文件。
+- 后台「一键公开已核实」默认看不到。`GET /api/admin/news` 的 `showPublishVerified` 为 false。把 `NEWS_SHOW_PUBLISH_VERIFIED_BUTTON=1` 写入 `switches.env` 后刷新，按钮出现。未设置时直接调用 `POST /api/admin/news/publish-verified` 仍要登录、CSRF 和同源检查；未登录是 401。
+- 待审且未核实的条目仍可在后台逐条公开或驳回。公开后 `version` 加 1。
+- 若要撤回已自动公开的条目，在后台逐条点「撤下」，并确认每撤下一条 `version` 再加 1、该条从主应用和备用阅读站消失。备用站会再发一版。
+- 只提交未核实或重复编号时，记下 `/api/content` 的 `version` 和备用站 `contentVersion`。两者都不应增加，签名不变，备用站发布任务应跳过部署。
 - 数据库迁移前备份 `/opt/prayer-earth-trial/data`（至少包含 `admin.sqlite3`）。打开服务后旧库应自动多出 `needs_prayer` 和 `prayer_excluded`，已有行仍在，两列默认为 0。
 - 用一条测试动态确认：已核实且标题含「迫害」一类关键词的，公开后出现在 `/api/prayer-requests` 和 `/reader/prayers.html`，不出现在 `/api/content` 和 `/reader/news.html`。排除后回到后两处，祷告页不再列出，数据库里仍能看到该行。未核实的同类标题不会自动出现，手动标记后才出现并带「待核实」。
 - `GET /api/content` 与快照 `health.json` 的 `contentVersion` 在同一次分流写入后相等，并且只加 1。备用站签名应变化。`/api/prayer-requests` 的响应里没有 `status` 或 `needsPrayer`。
