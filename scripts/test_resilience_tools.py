@@ -5,11 +5,13 @@ import tempfile
 import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from PIL import Image
 
+from scripts import admin_backend
 from scripts.admin_backend import AdminStore
 _PUBLISHER_SPEC = importlib.util.spec_from_file_location("reader_publisher", Path(__file__).with_name("deploy-reader-failover.py"))
 assert _PUBLISHER_SPEC and _PUBLISHER_SPEC.loader
@@ -200,6 +202,96 @@ class ResilienceToolTests(unittest.TestCase):
             with store._db() as db:
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM news").fetchone()[0], 2)
                 self.assertEqual(db.execute("SELECT status FROM news WHERE id=?", (prayer_id,)).fetchone()[0], "published")
+
+    def test_auto_published_batch_bumps_snapshot_signature_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            site, data = root / "site", root / "data"
+            site.mkdir()
+            store = AdminStore(data, secure_cookies=False)
+            baseline = root / "baseline"
+            manifest = build_snapshot(data_dir=data, site_root=site, output=baseline)
+            version = manifest["contentVersion"]
+            signature = _PUBLISHER.signature(manifest)
+            with patch.object(admin_backend, "NEWS_SWITCH_FILE", root / "missing-switches.env"), patch.dict(
+                os.environ, {admin_backend.AUTO_PUBLISH_VERIFIED_ENV: ""}, clear=False,
+            ):
+                created = store.ingest_news([
+                    {
+                        "title": "已核实教会周报",
+                        "summary": "自动出现在宗教动态",
+                        "source_url": "https://example.com/church/auto-home",
+                        "source_name": "教会通讯",
+                        "published_at": "2026-10-27T08:00:00Z",
+                        "region": "全球",
+                        "verified": True,
+                        "category": "教会",
+                    },
+                    {
+                        "title": "信徒遭监禁",
+                        "summary": "自动进入祷告页",
+                        "source_url": "https://example.com/church/auto-prayer",
+                        "source_name": "教会通讯",
+                        "published_at": "2026-10-28T08:00:00Z",
+                        "region": "全球",
+                        "verified": True,
+                        "category": "教会",
+                    },
+                    {
+                        "title": "未核实周报",
+                        "summary": "仍待人工公开",
+                        "source_url": "https://example.com/church/auto-pending",
+                        "source_name": "教会通讯",
+                        "published_at": "2026-10-27T09:00:00Z",
+                        "region": "全球",
+                        "verified": False,
+                        "category": "教会",
+                    },
+                ])
+            home_id, prayer_id, pending_id = created["inserted"]
+            published = root / "published"
+            visible = build_snapshot(data_dir=data, site_root=site, output=published)
+            _PUBLISHER.validate_snapshot(published)
+            self.assertEqual(visible["contentVersion"], version + 1)
+            self.assertEqual(store.content(public=True)["version"], visible["contentVersion"])
+            self.assertEqual(visible["counts"]["news"], 1)
+            self.assertEqual(visible["counts"]["prayers"], 1)
+            news_html = (published / "reader" / "news.html").read_text(encoding="utf-8")
+            prayer_html = (published / "reader" / "prayers.html").read_text(encoding="utf-8")
+            self.assertIn("已核实教会周报", news_html)
+            self.assertNotIn("信徒遭监禁", news_html)
+            self.assertNotIn("未核实周报", news_html)
+            self.assertIn("信徒遭监禁", prayer_html)
+            self.assertNotIn(pending_id, news_html)
+            self.assertNotEqual(signature, _PUBLISHER.signature(visible))
+            with patch.object(admin_backend, "NEWS_SWITCH_FILE", root / "missing-switches.env"), patch.dict(
+                os.environ, {admin_backend.AUTO_PUBLISH_VERIFIED_ENV: ""}, clear=False,
+            ):
+                repeated = store.ingest_news([
+                    {
+                        "title": "已核实教会周报",
+                        "summary": "自动出现在宗教动态",
+                        "source_url": "https://example.com/church/auto-home",
+                        "source_name": "教会通讯",
+                        "published_at": "2026-10-27T08:00:00Z",
+                        "region": "全球",
+                        "verified": True,
+                        "category": "教会",
+                    },
+                ])
+            self.assertEqual(repeated["published"], [])
+            self.assertEqual(repeated["ignored"], [home_id])
+            again = root / "duplicate"
+            duplicate = build_snapshot(data_dir=data, site_root=site, output=again)
+            self.assertEqual(duplicate["contentVersion"], visible["contentVersion"])
+            self.assertEqual(_PUBLISHER.signature(duplicate), _PUBLISHER.signature(visible))
+            store.review_news("editor", home_id, "reject")
+            removed = root / "removed"
+            after = build_snapshot(data_dir=data, site_root=site, output=removed)
+            self.assertEqual(after["contentVersion"], visible["contentVersion"] + 1)
+            self.assertNotIn("已核实教会周报", (removed / "reader" / "news.html").read_text(encoding="utf-8"))
+            self.assertNotEqual(_PUBLISHER.signature(after), _PUBLISHER.signature(visible))
+            self.assertIn("信徒遭监禁", (removed / "reader" / "prayers.html").read_text(encoding="utf-8"))
 
     def test_backup_uses_sqlite_snapshot_and_rotates(self):
         with tempfile.TemporaryDirectory() as folder:

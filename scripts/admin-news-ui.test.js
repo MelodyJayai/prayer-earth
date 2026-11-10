@@ -11,7 +11,7 @@ function loadPublishVerifiedUi() {
   const sandbox = {};
   runInNewContext(
     `${matched[1]}
-this.exports = { countPublishableNews, publishVerifiedConfirmText, publishVerifiedButtonState, publishVerifiedDecision };`,
+this.exports = { countPublishableNews, publishVerifiedConfirmText, publishVerifiedButtonState, publishVerifiedDecision, publishVerifiedButtonVisible };`,
     sandbox,
   );
   if (!sandbox.exports) {
@@ -64,6 +64,43 @@ describe("一键公开已核实确认", () => {
     expect(ui.html).toContain("publishVerifiedDecision");
     expect(ui.html).toContain("/news/publish-verified");
     expect(ui.html).toContain("expected_count");
+  });
+
+  it("一键公开按钮默认隐藏，只有服务端布尔真才显示", () => {
+    expect(ui.publishVerifiedButtonVisible(true)).toBe(true);
+    expect(ui.publishVerifiedButtonVisible(false)).toBe(false);
+    expect(ui.publishVerifiedButtonVisible(undefined)).toBe(false);
+    expect(ui.publishVerifiedButtonVisible("true")).toBe(false);
+    expect(ui.publishVerifiedButtonVisible(1)).toBe(false);
+    expect(ui.html).toMatch(/id="publish-verified"[^>]*\shidden\b/);
+    expect(ui.html).toContain("showPublishVerified");
+  });
+});
+
+function loadNewsReviewUi() {
+  const html = readFileSync("scripts/admin.html", "utf8");
+  const matched = html.match(/\/\* news-review-ui \*\/([\s\S]*?)\/\* \/news-review-ui \*\//);
+  if (!matched) throw new Error("admin.html 缺少 news-review-ui");
+  const sandbox = {};
+  runInNewContext(
+    `${matched[1]}\nthis.exports = { newsReviewActionLabel, newsReviewConfirmText, newsReviewSuccessText };`,
+    sandbox,
+  );
+  return { html, ...sandbox.exports };
+}
+
+describe("逐条撤下已公开动态", () => {
+  const ui = loadNewsReviewUi();
+
+  it("已公开显示撤下，待审显示驳回，已驳回不再提供撤下", () => {
+    expect(ui.newsReviewActionLabel("published")).toBe("撤下");
+    expect(ui.newsReviewActionLabel("pending")).toBe("驳回");
+    expect(ui.newsReviewActionLabel("rejected")).toBe("");
+    expect(ui.newsReviewConfirmText("published", "reject")).toContain("内容版本加 1");
+    expect(ui.newsReviewConfirmText("pending", "reject")).toContain("驳回");
+    expect(ui.newsReviewSuccessText("published", "reject")).toBe("动态已撤下。");
+    expect(ui.html).toContain("newsReviewActionLabel");
+    expect(ui.html).toContain("return '撤下'");
   });
 });
 

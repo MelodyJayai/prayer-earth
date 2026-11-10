@@ -184,8 +184,8 @@
       <div class="row" style="justify-content:center;margin-top:17px"><button id="load-more" class="btn secondary" hidden>显示更多</button></div>
     </section>
     <section id="view-news" role="tabpanel" aria-labelledby="tab-news" hidden>
-      <div class="panel"><div class="row between"><div><h1>宗教动态审核</h1><div id="news-count" class="muted">正在加载…</div></div><div class="row"><button id="publish-verified" class="btn small" type="button" disabled title="没有已核实的待审动态">一键公开已核实</button><button id="refresh-news" class="btn small secondary" type="button">刷新</button></div></div>
-        <p class="muted">外部提交的基督教、宗教宣教与教会动态先进入待审。公开后才会出现在主应用和备用阅读站。待审和驳回不会公开，也不会改内容版本。只公开已核实的待审：可逐条公开，或使用「一键公开已核实」。一次一键公开只把内容版本加 1。未核实、已驳回和已公开的都不会被这颗按钮改动。公开错了可再逐条驳回。</p>
+      <div class="panel"><div class="row between"><div><h1>宗教动态审核</h1><div id="news-count" class="muted">正在加载…</div></div><div class="row"><button id="publish-verified" class="btn small" type="button" hidden disabled title="没有已核实的待审动态">一键公开已核实</button><button id="refresh-news" class="btn small secondary" type="button">刷新</button></div></div>
+        <p class="muted">已核实的新动态默认在提交时自动公开，并进入主应用和备用阅读站。未核实的仍在这里逐条公开或驳回。已公开的可以逐条撤下；撤下后内容版本加 1，同一条再被提交也不会自动重新公开。一键公开已核实默认不显示，只在需要人工补公开时打开。</p>
         <div class="filters">
           <div><label for="news-filter-status">状态</label><select id="news-filter-status"><option value="pending">待审</option><option value="published">已公开</option><option value="rejected">已驳回</option><option value="">全部</option></select></div>
         </div>
@@ -194,7 +194,7 @@
     </section>
     <section id="view-prayer-filter" role="tabpanel" aria-labelledby="tab-prayer-filter" hidden>
       <div class="panel"><div class="row between"><div><h1>迫害筛选</h1><div id="prayer-filter-count" class="muted">正在加载…</div></div><button id="refresh-prayer-filter" class="btn small secondary" type="button">刷新</button></div>
-        <p class="muted">只看已公开和待审动态。标题或摘要命中关键词时标为「建议候选」。已核实的候选在公开后自动进入祷告页，并从宗教动态列表移出。未核实的要手动「设为需要祷告」才会出现，页面上带「待核实」。排除优先于自动放行和手动标记，排除后回到宗教动态。不会删除记录。</p>
+        <p class="muted">只看已公开和待审动态。标题或摘要命中关键词时标为「建议候选」。已核实且命中关键词的新动态，提交后会直接公开并进入祷告页，并从宗教动态列表移出。未核实的要手动「设为需要祷告」才会出现，页面上带「待核实」。排除优先于自动放行和手动标记，排除后回到宗教动态。不会删除记录。</p>
       </div>
       <div id="prayer-filter-list" class="list"></div>
     </section>
@@ -216,7 +216,7 @@
 <script>
 (function () {
   'use strict';
-  var state = { user:null, csrf:'', items:[], users:[], news:[], prayerFilter:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false, prayerFilterLoaded:false, publishingNews:false, publishable:0 };
+  var state = { user:null, csrf:'', items:[], users:[], news:[], prayerFilter:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false, prayerFilterLoaded:false, publishingNews:false, publishable:0, showPublishVerified:false };
   var $ = function (id) { return document.getElementById(id); };
   var labels = { draft:'草稿', published:'已发布', archived:'已归档' };
   var newsLabels = { pending:'待审', published:'已公开', rejected:'已驳回' };
@@ -228,7 +228,7 @@
   function errorMessage(data, fallback) { if(data && data.message) return data.message; if(data && data.error && data.error.message) return data.error.message; if(data && typeof data.error === 'string') return data.error; return fallback; }
   function failedRequest(data, fallback, status) { var failure=new Error(errorMessage(data, fallback)); failure.status=status; if(data && typeof data.error === 'string') failure.code=data.error; if(data && typeof data.actual === 'number' && isFinite(data.actual)) failure.actual=data.actual; return failure; }
   function loginRequired(note) {
-    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.prayerFilter=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false; state.prayerFilterLoaded=false; state.publishingNews=false; state.publishable=0;
+    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.prayerFilter=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false; state.prayerFilterLoaded=false; state.publishingNews=false; state.publishable=0; state.showPublishVerified=false;
     resetEditor(); $('app').hidden=true; $('password-panel').hidden=true; $('boot').hidden=true; $('logout').hidden=true; $('login-panel').hidden=false;
     $('password-form').reset(); $('create-user-form').reset(); if(note) message(note,'error');
   }
@@ -333,7 +333,27 @@
     if (!confirmed) return { action: 'cancel', expectedCount: count };
     return { action: 'post', expectedCount: count };
   }
+  function publishVerifiedButtonVisible(flag) {
+    return flag === true;
+  }
   /* /publish-verified-ui */
+  /* news-review-ui */
+  function newsReviewActionLabel(status) {
+    if (status === 'published') return '撤下';
+    if (status === 'rejected') return '';
+    return '驳回';
+  }
+  function newsReviewConfirmText(status, action) {
+    if (action === 'publish') return '公开后，这条动态会出现在主应用和备用阅读站，并更新内容版本。确定公开吗？';
+    if (status === 'published') return '撤下后，这条动态会从主应用和备用阅读站去掉，内容版本加 1。同一编号再次提交也不会自动重新公开。确定撤下吗？';
+    return '驳回后，这条动态不会出现在公开页面。确定驳回吗？';
+  }
+  function newsReviewSuccessText(status, action) {
+    if (action === 'publish') return '动态已公开。';
+    if (status === 'published') return '动态已撤下。';
+    return '动态已驳回。';
+  }
+  /* /news-review-ui */
   /* prayer-filter-ui */
   function prayerFilterVisible(item) {
     return !!(item && (item.status === 'pending' || item.status === 'published'));
@@ -348,6 +368,9 @@
   function renderPublishVerified(count) {
     state.publishable = count;
     var button = $('publish-verified');
+    var visible = publishVerifiedButtonVisible(state.showPublishVerified);
+    button.hidden = !visible;
+    if (!visible) { button.disabled = true; return; }
     var view = publishVerifiedButtonState(count);
     button.disabled = !!state.publishingNews || view.disabled;
     button.textContent = view.label;
@@ -359,6 +382,7 @@
     try {
       var data=await request('/news'+(status ? '?status='+encodeURIComponent(status) : ''));
       state.news=data.items || []; state.newsLoaded=true;
+      state.showPublishVerified = data.showPublishVerified === true;
       renderPublishVerified(typeof data.publishable === 'number' ? data.publishable : countPublishableNews(state.news));
       renderNews();
     }
@@ -393,23 +417,26 @@
   }
   function renderNews() {
     var publishable=state.publishable || 0;
-    $('news-count').textContent='当前 '+state.news.length+' 条'+(publishable > 0 ? ' · 已核实待审 '+publishable+' 条可一键公开' : ' · 没有已核实的待审动态');
+    var batchHint='';
+    if(publishVerifiedButtonVisible(state.showPublishVerified)) batchHint=publishable > 0 ? ' · 已核实待审 '+publishable+' 条可一键公开' : ' · 没有已核实的待审动态';
+    $('news-count').textContent='当前 '+state.news.length+' 条'+batchHint;
     $('news-list').innerHTML=state.news.map(function(item){
       var status=item.status || 'pending';
       var unverified=item.verified === false ? ' <span class="badge pending">待核实</span>' : '';
       var routed=item.onPrayerPage === true ? ' <span class="badge prayer">已在祷告页</span>' : '';
       var source=safeNewsUrl(item.sourceUrl) ? '<a href="'+escapeHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(item.sourceName || '来源')+'</a>' : escapeHtml(item.sourceName || '来源');
       var actions='';
+      var reviewLabel=newsReviewActionLabel(status);
       if(status !== 'published') actions+='<button class="btn small" data-news-action="publish" data-id="'+escapeHtml(item.id)+'">公开</button>';
-      if(status !== 'rejected') actions+='<button class="btn small danger" data-news-action="reject" data-id="'+escapeHtml(item.id)+'">驳回</button>';
+      if(reviewLabel) actions+='<button class="btn small danger" data-news-action="reject" data-id="'+escapeHtml(item.id)+'">'+reviewLabel+'</button>';
       if(status === 'published') actions+='<a class="btn small quiet" target="_blank" rel="noopener" href="/reader/'+encodeURIComponent(item.id)+'.html">查看发布 ↗</a>';
       return '<article class="content-card"><div class="card-copy"><div class="muted">'+escapeHtml(item.date)+' · '+escapeHtml(item.category || '宗教动态')+' · '+escapeHtml(item.region || '')+' <span class="badge '+status+'">'+escapeHtml(newsLabels[status] || status)+'</span>'+unverified+routed+'</div><h3 class="card-title">'+escapeHtml(item.title)+'</h3><p class="card-excerpt">'+escapeHtml(item.summary || item.excerpt || '')+'</p><div class="muted">来源：'+source+'</div></div><div class="card-actions">'+actions+'</div></article>';
     }).join('') || '<div class="panel empty">没有符合条件的动态。</div>';
   }
   async function reviewNews(item, action, button) {
-    if(!window.confirm(action === 'publish' ? '公开后，这条动态会出现在主应用和备用阅读站，并更新内容版本。确定公开吗？' : '驳回后，这条动态不会出现在公开页面。确定驳回吗？')) return;
+    if(!window.confirm(newsReviewConfirmText(item.status, action))) return;
     button.disabled=true;
-    try { await request('/news/'+encodeURIComponent(item.id)+'/'+action,{method:'POST',body:{}}); state.newsLoaded=false; await loadNews(); message(action === 'publish' ? '动态已公开。' : '动态已驳回。','success'); }
+    try { await request('/news/'+encodeURIComponent(item.id)+'/'+action,{method:'POST',body:{}}); state.newsLoaded=false; await loadNews(); message(newsReviewSuccessText(item.status, action),'success'); }
     catch(error) { message(error.message,'error'); button.disabled=false; }
   }
   function editContent(item) {
