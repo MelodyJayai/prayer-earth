@@ -147,6 +147,7 @@
       <button id="tab-compose" class="tab" role="tab" aria-selected="true" aria-controls="view-compose" data-view="compose">发布内容</button>
       <button id="tab-library" class="tab" role="tab" aria-selected="false" aria-controls="view-library" data-view="library">内容管理</button>
       <button id="tab-news" class="tab" role="tab" aria-selected="false" aria-controls="view-news" data-view="news">宗教动态</button>
+      <button id="tab-missions" class="tab" role="tab" aria-selected="false" aria-controls="view-missions" data-view="missions">宣教动态</button>
       <button id="tab-prayer-filter" class="tab" role="tab" aria-selected="false" aria-controls="view-prayer-filter" data-view="prayer-filter">迫害筛选</button>
       <button id="tab-users" class="tab" role="tab" aria-selected="false" aria-controls="view-users" data-view="users" hidden>同工账号</button>
     </nav>
@@ -192,6 +193,15 @@
       </div>
       <div id="news-list" class="list"></div>
     </section>
+    <section id="view-missions" role="tabpanel" aria-labelledby="tab-missions" hidden>
+      <div class="panel"><div class="row between"><div><h1>宣教动态·报告·会议审核</h1><div id="missions-count" class="muted">正在加载…</div></div><button id="refresh-missions" class="btn small secondary" type="button">刷新</button></div>
+        <p class="muted">已核实的新条目默认在提交时自动公开，显示在「/missions」页面。未核实的在这里逐条公开或驳回；已公开的可以撤下，同一条再被提交也不会重新公开。</p>
+        <div class="filters">
+          <div><label for="missions-filter-status">状态</label><select id="missions-filter-status"><option value="pending">待审</option><option value="published">已公开</option><option value="rejected">已驳回</option><option value="">全部</option></select></div>
+        </div>
+      </div>
+      <div id="missions-list" class="list"></div>
+    </section>
     <section id="view-prayer-filter" role="tabpanel" aria-labelledby="tab-prayer-filter" hidden>
       <div class="panel"><div class="row between"><div><h1>迫害筛选</h1><div id="prayer-filter-count" class="muted">正在加载…</div></div><button id="refresh-prayer-filter" class="btn small secondary" type="button">刷新</button></div>
         <p class="muted">只看已公开和待审动态。标题或摘要命中关键词时标为「建议候选」。已核实且命中关键词的新动态，提交后会直接公开并进入祷告页，并从宗教动态列表移出。未核实的要手动「设为需要祷告」才会出现，页面上带「待核实」。排除优先于自动放行和手动标记，排除后回到宗教动态。不会删除记录。</p>
@@ -216,7 +226,7 @@
 <script>
 (function () {
   'use strict';
-  var state = { user:null, csrf:'', items:[], users:[], news:[], prayerFilter:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false, prayerFilterLoaded:false, publishingNews:false, publishable:0, showPublishVerified:false };
+  var state = { user:null, csrf:'', items:[], users:[], news:[], missions:[], prayerFilter:[], selected:[], editing:null, view:'compose', limit:30, saving:false, contentLoaded:false, usersLoaded:false, newsLoaded:false, missionsLoaded:false, prayerFilterLoaded:false, publishingNews:false, publishable:0, showPublishVerified:false };
   var $ = function (id) { return document.getElementById(id); };
   var labels = { draft:'草稿', published:'已发布', archived:'已归档' };
   var newsLabels = { pending:'待审', published:'已公开', rejected:'已驳回' };
@@ -228,7 +238,7 @@
   function errorMessage(data, fallback) { if(data && data.message) return data.message; if(data && data.error && data.error.message) return data.error.message; if(data && typeof data.error === 'string') return data.error; return fallback; }
   function failedRequest(data, fallback, status) { var failure=new Error(errorMessage(data, fallback)); failure.status=status; if(data && typeof data.error === 'string') failure.code=data.error; if(data && typeof data.actual === 'number' && isFinite(data.actual)) failure.actual=data.actual; return failure; }
   function loginRequired(note) {
-    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.prayerFilter=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false; state.prayerFilterLoaded=false; state.publishingNews=false; state.publishable=0; state.showPublishVerified=false;
+    state.user=null; state.csrf=''; state.items=[]; state.users=[]; state.news=[]; state.missions=[]; state.missionsLoaded=false; state.prayerFilter=[]; state.contentLoaded=false; state.usersLoaded=false; state.newsLoaded=false; state.prayerFilterLoaded=false; state.publishingNews=false; state.publishable=0; state.showPublishVerified=false;
     resetEditor(); $('app').hidden=true; $('password-panel').hidden=true; $('boot').hidden=true; $('logout').hidden=true; $('login-panel').hidden=false;
     $('password-form').reset(); $('create-user-form').reset(); if(note) message(note,'error');
   }
@@ -256,8 +266,8 @@
   function showPassword(required) { $('app').hidden=true; $('password-panel').hidden=false; $('password-back').hidden=required; $('password-title').textContent=required ? '设置自己的密码' : '修改登录密码'; $('password-intro').textContent=required ? '首次登录或管理员重置密码后，请先更换临时密码，再发布内容。' : '更换后请使用新密码登录，并妥善保存。'; $('password-form').reset(); }
   function showView(view) {
     state.view=view;
-    ['compose','library','users','news','prayer-filter'].forEach(function(name) { $('view-'+name).hidden=name !== view; $('tab-'+name).setAttribute('aria-selected',String(name === view)); });
-    if(view === 'library' && !state.contentLoaded) loadContent(); if(view === 'users' && !state.usersLoaded) loadUsers(); if(view === 'news' && !state.newsLoaded) loadNews(); if(view === 'prayer-filter' && !state.prayerFilterLoaded) loadPrayerFilter();
+    ['compose','library','users','news','missions','prayer-filter'].forEach(function(name) { $('view-'+name).hidden=name !== view; $('tab-'+name).setAttribute('aria-selected',String(name === view)); });
+    if(view === 'library' && !state.contentLoaded) loadContent(); if(view === 'users' && !state.usersLoaded) loadUsers(); if(view === 'news' && !state.newsLoaded) loadNews(); if(view === 'missions' && !state.missionsLoaded) loadMissions(); if(view === 'prayer-filter' && !state.prayerFilterLoaded) loadPrayerFilter();
   }
   function lockForm(form, busy, label) { Array.prototype.forEach.call(form.querySelectorAll('button,input,select,textarea'),function(control){ control.disabled=busy; }); form.setAttribute('aria-busy',String(busy)); if(label) message(label); }
   function clearSelected() { state.selected.forEach(function(file){URL.revokeObjectURL(file.url);}); state.selected=[]; $('content-images').value=''; renderSelected(); }
@@ -439,6 +449,38 @@
     try { await request('/news/'+encodeURIComponent(item.id)+'/'+action,{method:'POST',body:{}}); state.newsLoaded=false; await loadNews(); message(newsReviewSuccessText(item.status, action),'success'); }
     catch(error) { message(error.message,'error'); button.disabled=false; }
   }
+  /* missions-review-ui */
+  async function loadMissions() {
+    $('missions-list').innerHTML='<div class="panel empty">正在加载…</div>'; $('refresh-missions').disabled=true;
+    var status=$('missions-filter-status').value;
+    try {
+      var data=await request('/missions'+(status ? '?status='+encodeURIComponent(status) : ''));
+      state.missions=data.items || []; state.missionsLoaded=true; renderMissions();
+    }
+    catch(error) { $('missions-list').innerHTML='<div class="panel empty">加载失败，请点击刷新重试。</div>'; message(error.message,'error'); }
+    finally { $('refresh-missions').disabled=false; }
+  }
+  function renderMissions() {
+    $('missions-count').textContent='当前 '+state.missions.length+' 条';
+    $('missions-list').innerHTML=state.missions.map(function(item){
+      var status=item.status || 'pending';
+      var unverified=item.verified === false ? ' <span class="badge pending">待核实</span>' : '';
+      var source=safeNewsUrl(item.sourceUrl) ? '<a href="'+escapeHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(item.sourceName || '来源')+'</a>' : escapeHtml(item.sourceName || '来源');
+      var actions='';
+      if(status !== 'published') actions+='<button class="btn small" data-mission-action="publish" data-id="'+escapeHtml(item.id)+'">公开</button>';
+      if(status !== 'rejected') actions+='<button class="btn small danger" data-mission-action="reject" data-id="'+escapeHtml(item.id)+'">'+(status === 'published' ? '撤下' : '驳回')+'</button>';
+      var when=item.eventDate ? ' · 活动 '+escapeHtml(item.eventDate) : '';
+      return '<article class="content-card"><div class="card-copy"><div class="muted">'+escapeHtml(item.date)+' · '+escapeHtml(item.kind || '')+' · '+escapeHtml(item.region || '')+when+' <span class="badge '+status+'">'+escapeHtml(newsLabels[status] || status)+'</span>'+unverified+'</div><h3 class="card-title">'+escapeHtml(item.title)+'</h3><p class="card-excerpt">'+escapeHtml(item.summary || '')+'</p><div class="muted">来源：'+source+'</div></div><div class="card-actions">'+actions+'</div></article>';
+    }).join('') || '<div class="panel empty">没有符合条件的条目。</div>';
+  }
+  async function reviewMission(item, action, button) {
+    var text=action === 'publish' ? '公开这一条宣教动态？' : (item.status === 'published' ? '撤下这一条？撤下后同一条再被提交也不会重新公开。' : '驳回这一条？');
+    if(!window.confirm(text)) return;
+    button.disabled=true;
+    try { await request('/missions/'+encodeURIComponent(item.id)+'/'+action,{method:'POST',body:{}}); state.missionsLoaded=false; await loadMissions(); message(action === 'publish' ? '已公开。' : '已处理。','success'); }
+    catch(error) { message(error.message,'error'); button.disabled=false; }
+  }
+  /* /missions-review-ui */
   function editContent(item) {
     resetEditor(); state.editing=item; $('content-date').value=item.date; $('content-channel').value=channelName(item.channel) === '晨修' ? 'morning' : 'mission'; $('content-title').value=item.title || ''; $('content-excerpt').value=item.excerpt || ''; $('editor-heading').textContent='编辑内容'; $('editor-description').textContent='当前状态：'+(labels[statusOf(item)] || statusOf(item))+'。可更新文字，或选择新图片整组替换。'; $('new-content').hidden=false; $('publish-content').textContent=statusOf(item) === 'published' ? '保存并保持发布' : '发布内容'; $('images-label').innerHTML='替换为新图片 <span class="muted">（选填，可多选）</span>';
     var images=(item.segments || []).filter(function(segment){return !!segment.uri;}); $('existing-images-wrap').hidden=!images.length; $('existing-images').innerHTML=images.map(function(image,index){return '<div class="image-card"><a href="'+escapeHtml(image.uri)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+escapeHtml(image.uri)+'" alt="当前第 '+(index+1)+' 张图片"></a><div class="image-index">第 '+(index+1)+' 张</div></div>';}).join(''); showView('compose'); message(''); window.scrollTo(0,0);
@@ -472,6 +514,9 @@
   ['filter-channel','filter-status','filter-query'].forEach(function(id){$(id).addEventListener(id === 'filter-query' ? 'input' : 'change',function(){state.limit=30;renderContent();});});
   $('load-more').addEventListener('click',function(){state.limit+=30;renderContent();});
   $('content-list').addEventListener('click',function(event){var button=event.target.closest('[data-content-action]');if(!button)return;var item=state.items.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return;var action=button.getAttribute('data-content-action');if(action === 'edit')editContent(item);else updateStatus(item,action === 'archive' ? 'archived' : 'draft',button);});
+  $('refresh-missions').addEventListener('click',function(){message(''); state.missionsLoaded=false; loadMissions();});
+  $('missions-filter-status').addEventListener('change',function(){state.missionsLoaded=false; loadMissions();});
+  $('missions-list').addEventListener('click',function(event){var button=event.target.closest('[data-mission-action]');if(!button)return;var item=state.missions.find(function(item){return String(item.id) === button.getAttribute('data-id');});if(!item)return; reviewMission(item,button.getAttribute('data-mission-action'),button);});
   $('refresh-news').addEventListener('click',function(){message(''); state.newsLoaded=false; loadNews();});
   $('publish-verified').addEventListener('click',function(){message(''); publishVerifiedNews();});
   $('news-filter-status').addEventListener('change',function(){state.newsLoaded=false; loadNews();});

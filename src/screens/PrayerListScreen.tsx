@@ -12,6 +12,7 @@ import {
 import { DemoDataNotice } from "../components/DemoDataNotice";
 import { PageHeader } from "../components/PageHeader";
 import { PrayerCard } from "../components/PrayerCard";
+import { SectionSwitch, type BoardSection } from "../components/SectionSwitch";
 import { categoryOptions } from "../data";
 import type { Prayer, PrayerFilter } from "../domain/types";
 import { useMinuteClock } from "../hooks/useMinuteClock";
@@ -25,6 +26,8 @@ type Props = {
   feedStatus?: PrayerFeedStatus;
   onPray: (id: string) => void;
   onOpen: (id: string) => void;
+  /** Switch to the sibling mission board. Hidden when omitted. */
+  onSwitchSection?: (section: BoardSection) => void;
 };
 
 export const PrayerListScreen = memo(function PrayerListScreen({
@@ -34,6 +37,7 @@ export const PrayerListScreen = memo(function PrayerListScreen({
   feedStatus = "ready",
   onPray,
   onOpen,
+  onSwitchSection,
 }: Props) {
   const now = useMinuteClock();
   const news = prayers.filter((item) => item.source === "news");
@@ -69,6 +73,7 @@ export const PrayerListScreen = memo(function PrayerListScreen({
       ListHeaderComponent={
         <>
           <PageHeader title="全球祷告" subtitle="需要代祷的宗教动态" />
+          {onSwitchSection ? <SectionSwitch active="prayers" onSelect={onSwitchSection} /> : null}
           {showingSeeds ? <DemoDataNotice /> : null}
           <Text style={styles.intro}>
             这些条目来自已公开的宗教动态。已核实且涉及迫害的会自动出现；未核实的要同工确认后才列出，并标为待核实。人数不再汇总。「我来祷告」只记在这台设备上。

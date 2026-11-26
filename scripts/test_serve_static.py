@@ -233,6 +233,7 @@ class SpaFallbackTests(unittest.TestCase):
             serve_static.SPA_EXACT_ROUTES,
             frozenset({
                 "/prayers",
+                "/missions",
                 "/testimonies",
                 "/profile",
                 "/about",
@@ -242,6 +243,9 @@ class SpaFallbackTests(unittest.TestCase):
             }),
         )
         self.assertTrue(serve_static.is_spa_client_route("/prayers/"))
+        self.assertTrue(serve_static.is_spa_client_route("/missions"))
+        self.assertTrue(serve_static.is_spa_client_route("/missions/"))
+        self.assertFalse(serve_static.is_spa_client_route("/missions/extra"))
         self.assertTrue(serve_static.is_spa_client_route("/content/mission-20261017-090"))
         self.assertFalse(serve_static.is_spa_client_route("/api/content"))
         self.assertFalse(serve_static.is_spa_client_route("/admin"))

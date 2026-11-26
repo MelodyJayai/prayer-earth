@@ -12,7 +12,9 @@ directory MUST be outside the static document root. Seed JSON is an array or
 it returns False once any account exists. It never stores cleartext passwords.
 All Store validation failures raise ApiError(status, code, message). HTTP errors
 have {error, message}. A publish-count mismatch also includes ``actual``.
-``/api/content`` and ``/api/prayer-requests`` may be cached for 30 seconds.
+``/api/content``, ``/api/prayer-requests`` and ``/api/missions`` may be cached
+for 30 seconds. ``POST /api/ingest/missions`` takes the same bearer key as
+``/api/ingest/news`` and feeds the mission board (conferences, progress, reports).
 Their ETag is the shared content version plus a short hash of the returned
 item ids. Authenticated responses are not cached. The failover signature
 does not read that ETag; it still uses snapshot file hashes and
@@ -85,6 +87,13 @@ _SWITCH_ON = frozenset({"1", "true", "on"})
 NEWS_CHANNEL = "宗教动态"
 NEWS_CATEGORIES = {"基督教", "宗教宣教", "教会", "教会相关"}
 NEWS_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", "region", "verified", "category"}
+# Mission board: conferences, field progress and research reports. Same ingest
+# key, limiter and auto-publish switch as news; its own table and public feed.
+MISSION_KINDS = ("会议", "进展", "报告")
+MISSION_REQUIRED_FIELDS = {"title", "summary", "source_url", "source_name", "published_at", "region", "verified", "kind"}
+MISSION_FIELDS = MISSION_REQUIRED_FIELDS | {"event_date"}
+MISSION_ID_RE = r"mission-[0-9]{8}-[a-f0-9]{12}"
+INGEST_PATHS = frozenset({"/api/ingest/news", "/api/ingest/missions"})
 # Substring match on title + summary only. Keep phrases specific; region,
 # source name and URL must not pull an unrelated item onto the prayer page.
 PRAYER_CANDIDATE_KEYWORDS = (
@@ -340,6 +349,24 @@ def _news_id(stamp: dt.datetime, canonical_url: str) -> str:
     return f"news-{stamp.astimezone(dt.timezone.utc).strftime('%Y%m%d')}-{digest}"
 
 
+def _mission_id(stamp: dt.datetime, canonical_url: str) -> str:
+    digest = hashlib.sha256(canonical_url.encode("utf-8")).hexdigest()[:12]
+    return f"mission-{stamp.astimezone(dt.timezone.utc).strftime('%Y%m%d')}-{digest}"
+
+
+def _event_date(value: object) -> str:
+    """Optional event day for a conference. May lie in the future."""
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        raise ApiError(400, "invalid_event_date", "活动日期须为 YYYY-MM-DD。")
+    try:
+        day = dt.date.fromisoformat(value)
+    except ValueError:
+        raise ApiError(400, "invalid_event_date", "活动日期须为 YYYY-MM-DD。") from None
+    if day < dt.date(1990, 1, 1) or day > dt.date(2100, 12, 31):
+        raise ApiError(400, "invalid_event_date", "活动日期超出允许范围。")
+    return day.isoformat()
+
+
 def _prayer_haystack(data: dict) -> str:
     parts = []
     for key in ("title", "summary"):
@@ -442,6 +469,11 @@ class AdminStore:
               needs_prayer INTEGER NOT NULL DEFAULT 0,
               prayer_excluded INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS news_status ON news(status, id);
+            CREATE TABLE IF NOT EXISTS missions (
+              id TEXT PRIMARY KEY, data TEXT NOT NULL, status TEXT NOT NULL
+              CHECK(status IN ('pending','published','rejected')),
+              created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS missions_status ON missions(status, id);
             """)
             self._migrate_news_prayer_columns(db)
             if seed_file:
@@ -1108,6 +1140,157 @@ class AdminStore:
             )
             return {"item": item, "version": version}
 
+    # ---- mission board (conferences, field progress, reports) ----
+
+    @staticmethod
+    def _public_mission(data: dict, *, status: str | None = None, updated_at: str | None = None) -> dict:
+        item = {
+            "id": data["id"],
+            "title": data["title"],
+            "summary": data["summary"],
+            "sourceName": data["source_name"],
+            "sourceUrl": data["source_url"],
+            "date": data["date"],
+            "region": data["region"],
+            "kind": data["kind"],
+            "verified": data.get("verified") is True,
+        }
+        if data.get("event_date"):
+            item["eventDate"] = data["event_date"]
+        if status is not None:
+            item["status"] = status
+            item["updatedAt"] = updated_at
+        return item
+
+    def _normalize_mission_item(self, raw: object, index: int) -> dict:
+        label = f"第 {index + 1} 条"
+        if not isinstance(raw, dict):
+            raise ApiError(400, "invalid_mission_item", f"{label}不是对象。")
+        if any(key not in MISSION_FIELDS for key in raw):
+            raise ApiError(400, "unknown_field", f"{label}包含不支持的字段。")
+        if MISSION_REQUIRED_FIELDS - raw.keys():
+            raise ApiError(400, "invalid_mission_item", f"{label}缺少必要字段。")
+        title = _plain(raw.get("title"), minimum=1, maximum=MAX_NEWS_TITLE, code="invalid_text",
+                       message=f"{label}标题须为 1–{MAX_NEWS_TITLE} 个字符。")
+        summary = _plain(raw.get("summary"), minimum=1, maximum=MAX_NEWS_SUMMARY, code="invalid_text",
+                         message=f"{label}摘要须为 1–{MAX_NEWS_SUMMARY} 个字符。")
+        source_name = _plain(raw.get("source_name"), minimum=1, maximum=MAX_NEWS_SOURCE_NAME, code="invalid_text",
+                             message=f"{label}来源名须为 1–{MAX_NEWS_SOURCE_NAME} 个字符。")
+        region = _plain(raw.get("region"), minimum=1, maximum=MAX_NEWS_REGION, code="invalid_text",
+                        message=f"{label}地区须为 1–{MAX_NEWS_REGION} 个字符。")
+        kind = raw.get("kind")
+        if not isinstance(kind, str) or kind.strip() not in MISSION_KINDS:
+            raise ApiError(400, "invalid_kind", f"{label}类型须为会议、进展或报告。")
+        if not isinstance(raw.get("verified"), bool):
+            raise ApiError(400, "invalid_verified", f"{label}的 verified 须为布尔值。")
+        source_url = _canonical_source_url(raw.get("source_url"))
+        stamp = _published_stamp(raw.get("published_at"))
+        record = {
+            "id": _mission_id(stamp, source_url),
+            "title": title,
+            "summary": summary,
+            "source_url": source_url,
+            "source_name": source_name,
+            "published_at": stamp.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "date": stamp.astimezone(dt.timezone.utc).date().isoformat(),
+            "region": region,
+            "kind": kind.strip(),
+            "verified": raw["verified"],
+        }
+        if "event_date" in raw:
+            record["event_date"] = _event_date(raw["event_date"])
+        return record
+
+    def _mission_public_ids(self, db) -> frozenset[str]:
+        return frozenset(row["id"] for row in db.execute("SELECT id FROM missions WHERE status='published'"))
+
+    def _bump_if_missions_changed(self, db, before: frozenset[str]) -> None:
+        if self._mission_public_ids(db) != before:
+            self._bump(db)
+
+    def ingest_missions(self, items: object) -> dict:
+        """Insert a mission-board batch. Same rules as ``ingest_news``.
+
+        Duplicates (same canonical source URL and UTC date) are ignored and a
+        rejected row is never re-published. ``verified: true`` rows are
+        published at once while the shared auto-publish switch is on.
+        """
+        if not isinstance(items, list) or not items:
+            raise ApiError(400, "invalid_batch", f"请一次提交 1–{MAX_NEWS_BATCH} 条宣教动态。")
+        if len(items) > MAX_NEWS_BATCH:
+            raise ApiError(400, "batch_too_large", f"单次最多提交 {MAX_NEWS_BATCH} 条宣教动态。")
+        records = [self._normalize_mission_item(item, index) for index, item in enumerate(items)]
+        auto = auto_publish_verified_enabled()
+        inserted: list[str] = []
+        ignored: list[str] = []
+        published: list[str] = []
+        with self._db() as db:
+            before = self._mission_public_ids(db)
+            for record in records:
+                status = "published" if auto and record["verified"] is True else "pending"
+                db.execute(
+                    "INSERT OR IGNORE INTO missions(id,data,status,created_at,updated_at) VALUES (?,?,?,?,?)",
+                    (record["id"], json.dumps(record, ensure_ascii=False), status, _now(), _now()),
+                )
+                if db.execute("SELECT changes()").fetchone()[0]:
+                    inserted.append(record["id"])
+                    if status == "published":
+                        published.append(record["id"])
+                else:
+                    ignored.append(record["id"])
+            self._bump_if_missions_changed(db, before)
+            detail: dict = {"inserted": inserted, "ignored": ignored, "published": published}
+            if published:
+                detail["note"] = "auto-publish by ingest"
+            self._audit(db, "news-ingest", "ingest_missions", None, detail)
+        return {"inserted": inserted, "ignored": ignored, "published": published}
+
+    def missions_public(self) -> dict:
+        """Published mission-board rows, newest first. No admin fields."""
+        with self._db() as db:
+            db.execute("BEGIN")
+            items = [
+                self._public_mission(json.loads(row["data"]))
+                for row in db.execute("SELECT data FROM missions WHERE status='published'")
+            ]
+            items.sort(key=lambda item: (item["date"], item["id"]), reverse=True)
+            version = int(db.execute("SELECT value FROM meta WHERE key='version'").fetchone()[0])
+            return {"version": version, "items": items}
+
+    def missions_listing(self, status: str | None = None) -> dict:
+        if status is not None and status not in ("pending", "published", "rejected"):
+            raise ApiError(400, "invalid_status", "状态须为 pending、published 或 rejected。")
+        with self._db() as db:
+            if status:
+                rows = db.execute("SELECT * FROM missions WHERE status=? ORDER BY created_at DESC, id DESC", (status,)).fetchall()
+            else:
+                rows = db.execute("SELECT * FROM missions ORDER BY created_at DESC, id DESC").fetchall()
+            items = [
+                self._public_mission(json.loads(row["data"]), status=row["status"], updated_at=row["updated_at"])
+                for row in rows
+            ]
+            return {"items": items}
+
+    def review_mission(self, actor: str, mission_id: str, action: str) -> dict:
+        if action not in ("publish", "reject"):
+            raise ApiError(400, "invalid_action", "审核动作须为公开或驳回。")
+        if not isinstance(mission_id, str) or not re.fullmatch(MISSION_ID_RE, mission_id):
+            raise ApiError(404, "mission_not_found", "宣教动态不存在。")
+        target = "published" if action == "publish" else "rejected"
+        with self._db() as db:
+            before = self._mission_public_ids(db)
+            row = db.execute("SELECT * FROM missions WHERE id=?", (mission_id,)).fetchone()
+            if not row:
+                raise ApiError(404, "mission_not_found", "宣教动态不存在。")
+            previous = row["status"]
+            stamp = row["updated_at"]
+            if previous != target:
+                stamp = _now()
+                db.execute("UPDATE missions SET status=?, updated_at=? WHERE id=?", (target, stamp, mission_id))
+            self._bump_if_missions_changed(db, before)
+            self._audit(db, actor, f"{action}_mission", mission_id, {"from": previous, "to": target})
+            return self._public_mission(json.loads(row["data"]), status=target, updated_at=stamp)
+
     def prayer_requests(self) -> dict:
         """Published rows routed to the prayer page. No admin fields."""
         with self._db() as db:
@@ -1303,7 +1486,7 @@ class AdminRequestMixin:
             return None
         return token
 
-    def _ingest_news(self, store: AdminStore) -> None:
+    def _ingest_news(self, store: AdminStore, target: str = "news") -> None:
         if self.command != "POST":
             raise ApiError(405, "method_not_allowed", "此接口仅接受提交。")
         limiter = getattr(self.server, "ingest_limiter", None)
@@ -1325,23 +1508,24 @@ class AdminRequestMixin:
         data = self._json_body(max_bytes=MAX_INGEST_BODY)
         if any(key != "items" for key in data):
             raise ApiError(400, "unknown_field", "请求只接受 items 数组。")
-        self._api_json(200, store.ingest_news(data.get("items")))
+        ingest = store.ingest_missions if target == "missions" else store.ingest_news
+        self._api_json(200, ingest(data.get("items")))
 
     def handle_admin_request(self):
         path = urlsplit(self.path).path
-        if path == "/api/ingest/news":
+        if path in INGEST_PATHS:
             try:
                 opened = resolve_ingest_key() is not None
             except ApiError:
                 opened = True
             if not opened:
                 return False
-        if not (path == "/api/content" or path == "/api/prayer-requests" or path.startswith("/api/admin/") or path == "/api/admin" or path == "/api/ingest/news"):
+        if not (path == "/api/content" or path == "/api/prayer-requests" or path == "/api/missions" or path.startswith("/api/admin/") or path == "/api/admin" or path in INGEST_PATHS):
             return False
         try:
             # Ingest uses its own limiter so a submitting bot cannot consume
             # the administrator write budget, and the reverse is also true.
-            if self.command not in ("GET", "HEAD") and path != "/api/ingest/news":
+            if self.command not in ("GET", "HEAD") and path not in INGEST_PATHS:
                 limiter = getattr(self.server, "request_limiter", None)
                 if limiter is not None:
                     identity = self.headers.get("CF-Connecting-IP") or self.client_address[0]
@@ -1369,6 +1553,19 @@ class AdminRequestMixin:
         method, token = self.command, self._token()
         if path == "/api/ingest/news":
             self._ingest_news(store)
+            return
+        if path == "/api/ingest/missions":
+            self._ingest_news(store, "missions")
+            return
+        if path == "/api/missions":
+            if method not in ("GET", "HEAD"):
+                raise ApiError(405, "method_not_allowed", "此接口仅支持读取。")
+            payload = store.missions_public()
+            self._api_json(
+                200, payload,
+                cache_control=PUBLIC_FEED_CACHE_CONTROL,
+                etag=feed_etag("missions", payload["version"], payload["items"]),
+            )
             return
         if path == "/api/content":
             if method not in ("GET", "HEAD"):
@@ -1445,6 +1642,21 @@ class AdminRequestMixin:
             if status == "":
                 status = None
             self._api_json(200, store.news_listing(status))
+            return
+        if path == "/api/admin/missions" and method in ("GET", "HEAD"):
+            pairs = parse_qsl(urlsplit(self.path).query, keep_blank_values=True)
+            if len(pairs) > 1 or any(key != "status" for key, _ in pairs):
+                raise ApiError(400, "invalid_query", "查询参数不正确。")
+            status = pairs[0][1] if pairs else None
+            if status == "":
+                status = None
+            self._api_json(200, store.missions_listing(status))
+            return
+        mission_match = re.fullmatch(r"/api/admin/missions/(" + MISSION_ID_RE + r")/(publish|reject)", path)
+        if mission_match and method == "POST":
+            if self._json_body():
+                raise ApiError(400, "unknown_field", "审核请求不接受额外字段。")
+            self._api_json(200, {"item": store.review_mission(user["id"], mission_match.group(1), mission_match.group(2))})
             return
         if path == "/api/admin/news/publish-verified" and method == "POST":
             data = self._json_body()

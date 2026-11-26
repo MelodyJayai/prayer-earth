@@ -40,6 +40,7 @@ COMPRESSIBLE = {".html", ".js", ".css", ".json", ".svg", ".txt"}
 # is accepted; extra segments, suffixes, and dot-paths are not.
 SPA_EXACT_ROUTES = frozenset({
     "/prayers",
+    "/missions",
     "/testimonies",
     "/profile",
     "/about",
