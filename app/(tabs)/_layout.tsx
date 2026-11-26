@@ -13,7 +13,7 @@ const routes: Record<AppTab, Href> = {
 export default function TabsLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const active: AppTab = pathname.startsWith("/prayers")
+  const active: AppTab = pathname.startsWith("/prayers") || pathname.startsWith("/missions")
     ? "祷告"
     : pathname.startsWith("/testimonies")
       ? "见证"
@@ -35,6 +35,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "首页" }} />
       <Tabs.Screen name="prayers" options={{ title: "祷告" }} />
+      <Tabs.Screen name="missions" options={{ title: "宣教动态·报告·会议" }} />
       <Tabs.Screen name="testimonies" options={{ title: "晨修与宣教" }} />
       <Tabs.Screen name="profile" options={{ title: "我的" }} />
     </Tabs>

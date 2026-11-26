@@ -13,6 +13,7 @@ export default function PrayersRoute() {
     (id: string) => router.push({ pathname: "/prayer/[id]", params: { id } }),
     [router],
   );
+  const openMissions = useCallback(() => router.navigate("/missions"), [router]);
   return (
     <ScreenFrame>
       {() => (
@@ -23,6 +24,7 @@ export default function PrayersRoute() {
           feedStatus={feedStatus}
           onPray={togglePrayer}
           onOpen={openPrayer}
+          onSwitchSection={openMissions}
         />
       )}
     </ScreenFrame>
